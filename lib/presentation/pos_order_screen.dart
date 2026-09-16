@@ -7,6 +7,8 @@
 // the PRD's own two models: pay-first takeaway and pay-later table
 // service.
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 
@@ -85,14 +87,31 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
     if (_cart.isEmpty) return null;
     setState(() => _saving = true);
     try {
-      final order = await widget.orderService.saveCashOrder(
-          clientOrderId: const Uuid().v4(),
-          locationId: widget.locationId,
-          orderType: _orderType,
-          tableLabel: widget.table?.label,
-          lines: _lines());
-      await widget.kitchenService.createTicketForOrder(order);
+      final order = await widget.orderService
+          .saveCashOrder(
+              clientOrderId: const Uuid().v4(),
+              locationId: widget.locationId,
+              orderType: _orderType,
+              tableLabel: widget.table?.label,
+              lines: _lines())
+          // A local-database write should never take long; if the
+          // platform's storage backend is stuck (e.g. a web build whose
+          // WASM/OPFS worker never resolves — see docs/JOURNAL.md), a
+          // silent infinite "Saving..." spinner is worse than a clear
+          // failure the user can retry.
+          .timeout(const Duration(seconds: 8));
+      await widget.kitchenService
+          .createTicketForOrder(order)
+          .timeout(const Duration(seconds: 8));
       return order;
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(e is TimeoutException
+                ? 'Saving is taking too long — the local database may be unavailable. Please try again.'
+                : 'Could not save the order: $e')));
+      }
+      return null;
     } finally {
       if (mounted) setState(() => _saving = false);
     }

@@ -25,6 +25,8 @@
 // than faked. Only Subtotal, GST and Total (values this app actually
 // computes) are shown.
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../application/payment_service.dart';
@@ -91,15 +93,28 @@ class _PaymentScreenState extends State<PaymentScreen> {
     if (received == null || change == null || change < 0) return;
     setState(() => _completing = true);
     try {
-      await widget.paymentService.recordCashPayment(
-          clientOrderId: widget.order.clientOrderId,
-          amountMinor: _totalMinor,
-          receivedMinor: received);
+      // Same reasoning as pos_order_screen.dart's _saveOrderAndKot: a
+      // local-database write should never take long, so bound it rather
+      // than leaving the button on "completing" forever if the platform
+      // storage backend is stuck.
+      await widget.paymentService
+          .recordCashPayment(
+              clientOrderId: widget.order.clientOrderId,
+              amountMinor: _totalMinor,
+              receivedMinor: received)
+          .timeout(const Duration(seconds: 8));
       if (!mounted) return;
       Navigator.of(context).pop();
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(
               'Cash payment recorded — ₹${(_totalMinor / 100).toStringAsFixed(2)}, change ₹${(change / 100).toStringAsFixed(2)}. (Not yet posted to central finance — that sync layer doesn\'t exist.)')));
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(e is TimeoutException
+                ? 'Saving is taking too long — the local database may be unavailable. Please try again.'
+                : 'Could not record the payment: $e')));
+      }
     } finally {
       if (mounted) setState(() => _completing = false);
     }
