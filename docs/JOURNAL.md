@@ -1,5 +1,37 @@
 # Proviyaa POS — Development Journal
 
+## 2026-09-16 — Proviyaa POS: The app got its real navigation, five more screens, and now runs in a browser and on Windows
+
+**The product stopped being four disconnected screens and became one application: a permanent left-hand menu with every module reachable from it, five more screens built from the approved designs, and the whole thing now runs in a web browser and can be built for Windows — with the code published to GitHub.**
+
+- **Why:** Until now the app opened straight into one screen with no way to reach anything else, and it opened dark when the approved design is light. That made it impossible to show anyone the product as a product. The founder also asked how to share it — which turned "make it navigable" into "make it something you can send someone a link to."
+
+- **Structural decisions:**
+  - The navigation is built **once** and wraps every screen, rather than each screen drawing its own copy. Adding a future screen now means writing only that screen. The alternative — letting each page own its own menu — was rejected because it guarantees the menu drifts out of sync between pages over time.
+  - The approved designs disagree with each other: different screens were captured with three different navigation styles (a left menu, a dark top tab bar, a collapsed icon strip). Rather than reproduce all three, the founder's explicitly nominated screen was treated as the single source of truth for the shell, and every other screen contributes only its own content. Noted here because it's a real inconsistency in the source material, not an oversight.
+  - The app is now pinned to the light design instead of following the computer's dark-mode setting. The "why is it black?" problem was never a design choice — it was the app quietly inheriting the operating system's preference.
+  - Screens with no real data behind them yet (delivery tracking, online order acceptance, menu editing) show the real layout with genuine reference data, but their buttons deliberately do nothing rather than pretending to work. Same standing rule as before: never make the app look more finished than it is.
+  - **"Add Item" and similar buttons being inert is intentional, not broken** — flagged because the founder reasonably read it as a bug. There is no menu-editing capability in this product yet.
+
+- **What works now:**
+  - Every module in the menu is reachable and shows a real screen: the POS order pad, Tables, All Orders, Dine In, Takeaway, Delivery, Online Orders, and Menu Management.
+  - **The app runs in a web browser** — verified properly, not assumed: an order was placed in Chrome and a real database was genuinely written inside the browser's storage. Getting there required tracking down why saving silently failed, which turned out to be a browser security requirement the hosting setup now satisfies.
+  - **The app can be built for Windows.** Every push now automatically produces a real Windows program as a downloadable file. This can't be checked from the founder's Mac — Apple machines can't build Windows software — so it's checked automatically on a Windows machine instead.
+  - The code is published at github.com/loki1514/Proviyaa-Pos- and is ready to be connected to a hosting provider for a live link.
+
+- **Bugs found by actually using it, not by reading it:** cards whose buttons overflowed their edges, a table whose text broke mid-word on smaller windows, and — the important one — **a save that could hang forever with a spinner and no explanation**. That last one is now capped with a clear, retryable error message. It would have looked like a frozen till to a cashier.
+
+- **Left undone, deliberately:**
+  - The order pad opens as a full-screen step rather than sitting inside the menu frame. Reworking that working, tested screen wasn't worth the risk in this pass.
+  - Screens exist for Delivery, Online Orders and Menu Management, but nothing behind them is real yet — no rider tracking, no accepting a Zomato order, no editing the menu.
+  - The Windows program has never been run by a human on an actual Windows machine; it is only known to build.
+  - Still no sign-in screen anywhere in the product — see the open question below.
+
+- **Open questions for the founder:**
+  - **There is no login screen in any of the 36 approved designs.** Either this product is meant to sit behind a sign-in that another Proviyaa system already owns, or one was never designed. This needs a decision — the offline staff sign-in logic already exists underneath, with nothing in front of it.
+  - The code repository is currently **public** — anyone can read it. It contains no passwords or keys, but it should be a deliberate choice rather than a default.
+  - Connecting the live hosting still needs the founder's authorization on their own account before it can be set up.
+
 ## 2026-09-15 — Proviyaa POS: Backend pushed from auth through sync — payments, offline sign-in, and the PowerSync spike
 
 **Closed a real gap under the already-built Payment screen (it wasn't actually saving anything), built the local-first staff sign-in and 24-hour offline authorization the source material specifically calls for, built the retry/idempotency logic a background sync will eventually run on, and did the real client-side half of the PowerSync compatibility spike — checking current documentation rather than assuming, since this ecosystem moves fast.**
