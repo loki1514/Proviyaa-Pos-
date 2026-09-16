@@ -1,0 +1,217 @@
+PROVIYAA POS — SOURCE UNDERSTANDING
+
+Purpose
+-------
+This document records the source-grounded interpretation completed before further POS feature work. It is an interpretation, not an approval to expand scope. No application behavior, Supabase schema, migration, or sync implementation was changed during this reading task.
+
+Source-reading record
+---------------------
+The following files were read completely in the requested order:
+1. docs/sources/Product Flow .converted.txt
+2. docs/sources/Product Architecture .converted.txt
+3. docs/sources/viyaa routes.converted.txt
+4. docs/PRD-DAY-03-RESTAURANT-POS.txt
+5. docs/FIGMA-DESIGN-CONTEXT.md
+6. docs/PREFLIGHT.txt
+
+The source copies are the preserved originals. Their SHA-256 values are recorded in docs/SOURCE-MANIFEST.txt.
+
+1. ECOSYSTEM MAP
+----------------
+Proviyaa OS / Master is the control plane. It governs organizations, locations, identities, memberships, roles, permissions, subscriptions, entitlements, feature availability, configuration, workflows, audit, releases and support. It is the existing OS/configurator and is not rebuilt by the Restaurant POS.
+
+Commerce OS is the shared transactional core. It owns the common commerce truth for catalogue/menu data, customers, orders, order lines, payments, refunds, settlements and related commercial records. Restaurant, Store, Service and the customer experience must not create competing order, payment or customer databases.
+
+Restaurant POS is a separate operator application for a restaurant location. It provides the local selling and operating experience: staff access, tables, menu, order capture, kitchen tickets, cash evidence, shift operation and local status/recovery. It consumes OS configuration and authorized commerce/restaurant commands.
+
+Shared Inventory / Inventory OS is the common inventory truth. Restaurant ingredients, recipes, stock, consumption, wastage, reservations and future warehouse/hub inventory are part of the shared inventory architecture. The restaurant must not create a separate restaurant inventory engine.
+
+OneCity is the customer-facing marketplace/demand layer. The source documents also use One Latur/OneLatur; the canonical product name remains an owner decision. OneCity creates customer demand and sends orders through the shared commerce system; it is not a restaurant tenant database.
+
+Fulfilment is the allocation and execution layer between an order and delivery. It selects or records fulfilment sources and creates fulfilment plans/jobs. Sources include merchant, restaurant, warehouse, hub and future mixed/multiple sources.
+
+Rider / Delivery is the movement layer. It handles rider availability, assignment, pickup, navigation, delivery, proof and exceptions. A rider receives limited fulfilment information and cannot change restaurant prices or order lines.
+
+Finance is the verification, reconciliation and settlement layer. It distinguishes customer payment, provider verification, cash custody, refunds, fees, merchant payable, rider remittance and settlement. Delivery completion is not payment settlement.
+
+Evidence: Product Architecture §§1–3, 6, 12, 25, 45, 51, 91–94, 104, 109; Product Flow §§1, 5, 7, 10, 12–15, 28–32, 40–42; viyaa routes.converted.txt §§3–11; PRD §§1, 3, 5, 9–10, 14.
+
+2. RESTAURANT POS BOUNDARY
+---------------------------
+The POS owns:
+- The restaurant operator experience for an enrolled organization/location.
+- Staff access within granted role and location scope.
+- Local table/session interaction, menu selection, modifiers, order drafting and order-origin display.
+- Local order capture, kitchen ticket creation, local print/display job state and cash-sale evidence.
+- Device-local working data, pending upload intent, restart recovery and visible synchronization/reconciliation status.
+- Operational views needed for the restaurant shift, including local unsynchronized totals and shift closure evidence.
+
+The POS reads:
+- Organization, location, staff membership, role/permission and device enrollment from the OS/control plane.
+- Published restaurant configuration, feature entitlements, workflow preset, layout/navigation configuration and configuration version.
+- Scoped menu/catalogue projections, price/tax snapshots, permitted channels, kitchen routing and relevant inventory projections.
+- Authorized cloud orders from OneCity/Commerce and fulfilment status needed by the restaurant.
+- Finance/reconciliation projections needed for operational display, without editing central finance history directly.
+
+The POS must never duplicate or independently own:
+- The central organization, identity, membership, entitlement or configuration truth.
+- The shared customer, catalogue, order, payment, refund, settlement or fulfilment databases.
+- The common Inventory OS or a second restaurant inventory engine.
+- Provider verification, settlement posting, merchant payable, rider remittance or financial correction rules.
+- Rider assignment, route optimization or delivery proof authority.
+- The existing Proviyaa OS/configurator, its migration history or its central schema ownership.
+
+A local SQLite database is a restricted working store and unsent-action store, not a second independent cloud backend. Central writes must occur through authorized commands owned by the appropriate domain.
+
+Evidence: Product Architecture §§3, 6, 7–10, 12, 25, 71, 74–75, 82–84, 102–104; Product Flow §§5, 7, 26–31, 37; viyaa routes §§6–9; PRD §§1, 3, 5–8, 10–11, 14.
+
+3. END-TO-END PATHS
+--------------------
+3.1 Walk-in restaurant sale
+1. Staff signs in and opens a permitted shift/device context.
+2. The cashier selects a table/service context or creates a takeaway/local order.
+3. The POS reads the menu and price/tax snapshot, adds lines/modifiers and calculates integer minor-unit totals locally.
+4. One local transaction saves the order and its durable pending-upload intent.
+5. A kitchen ticket is created with a unique ticket identity and sent to the local printer or kitchen screen.
+6. For the first offline-capable slice, cash collection may be recorded locally as cash evidence. Digital payment is not treated as provider-verified merely because the cashier taps “paid.”
+7. The kitchen prepares and marks the ticket through the permitted states. The shift can close locally with expected cash, counted cash and variance evidence.
+8. When connected, the sync/command path submits the same command identity to the authorized central domain. Duplicate retries produce one business effect; rejection or conflict becomes visible review work.
+
+Evidence: Product Architecture §25 and §§71, 81–82, 101, 104; Product Flow §§5, 7, 28–32; PRD §§4, 6–9, 10–11.
+
+3.2 OneCity restaurant order
+1. The customer discovers the restaurant, menu and availability in OneCity.
+2. OneCity creates a central order/payment attempt through Commerce; it is placed, not automatically restaurant-accepted.
+3. Payment provider confirmation, if applicable, is server-verified and deduplicated by Finance.
+4. The restaurant POS receives a scoped cloud order when the location is reachable and shows it as awaiting restaurant acceptance.
+5. Staff explicitly accepts or rejects it using the expected order version and a reason where required.
+6. Acceptance creates the restaurant/kitchen progression and later fulfilment handoff. A location that cannot receive orders must not continue promising immediate restaurant acceptance.
+
+Evidence: Product Architecture §§45, 94, 108; viyaa routes §§10–11; PRD §§1, 3, 6, 9–10.
+
+3.3 Kitchen to rider handoff
+1. Restaurant creates a KOT and routes it to the applicable kitchen station/device.
+2. Kitchen progresses the ticket to ready/picked-up according to the restaurant workflow.
+3. A ready event or authorized command links order, location and ticket references to Fulfilment.
+4. Fulfilment creates or updates one delivery job and assigns an eligible rider.
+5. The rider receives only the pickup/delivery information required for the job, confirms pickup, navigates and records delivery proof or an exception.
+6. Finance and audit consume the resulting evidence; pickup/delivery proof does not by itself settle cash or merchant money.
+
+Evidence: Product Architecture §§25, 51, 77, 81, 91–94, 108; Product Flow §§7, 30; viyaa routes §§9–11; PRD §§3–4, 9–11.
+
+3.4 Cash-on-delivery
+The order remains unpaid while prepared/delivered. The rider records cash collection against the assigned job/payment reference. Finance records rider cash custody and later remittance as separate facts. Delivery proof is not remittance, and remittance is not merchant settlement until reconciliation and approval requirements are satisfied.
+
+Evidence: Product Architecture §§17, 104; PRD §9.
+
+3.5 Prepaid order
+OneCity creates the order and payment attempt. The provider result is verified server-side and linked to the payment record. Restaurant acceptance remains a separate state. The system must have an approved timeout/refund or authorization/capture policy if payment precedes acceptance. Fulfilment and delivery then proceed independently of payment settlement, and Finance reconciles fees, merchant payable, refunds and settlement.
+
+Evidence: Product Architecture §§13, 17, 104; Product Flow §§3, 28–30; PRD §9.
+
+4. CORE SHARED ENTITIES
+------------------------
+- Organization: merchant tenant and primary authorization boundary.
+- Location: physical operating site under an organization; restaurant POS scope is location-specific.
+- Staff membership: user-to-organization/location role relationship with action-level permissions.
+- Customer: platform-level customer that may interact with multiple organizations; visible data must be authorized.
+- Menu item: restaurant catalogue/menu offering with variants/modifiers, availability and a versioned price/tax snapshot.
+- Order: shared commerce aggregate with origin, status history, version, configuration/pricing references and idempotency identity.
+- Order line: immutable-at-issuance product/dish, quantity, price, tax, discount and fee components as applicable.
+- Payment: attempt, provider verification/confirmation, cash evidence or pending verification; separate from order and settlement state.
+- Kitchen ticket: restaurant-owned preparation instruction with station routing, status history, ticket identity and print/display recovery state.
+- Fulfilment job: delivery execution record linked to an order/fulfilment plan, pickup, stops, rider and proof.
+- Rider: delivery actor with availability, assignment, authorization, vehicle/capacity and earnings/remittance evidence.
+- Settlement: reconciled commercial result for merchant/platform/delivery/hub/rider economics; not a direct POS edit.
+- Configuration: versioned OS-published settings, entitlements, workflows, roles, navigation/layout and restaurant preset used by an order.
+- Audit event: append-only or otherwise protected evidence of actor, action, authorization context, versions, timestamps, result and related IDs.
+
+Evidence: Product Architecture §§3–4, 7–10, 12, 25, 51, 70, 74–75, 77, 80–84, 101–104; Product Flow §§5–7, 28–31; viyaa routes §§3–11; PRD §§3–5, 9–11.
+
+5. OFFLINE REQUIREMENTS
+-----------------------
+Must work locally, subject to the approved first-device and offline-grant policy:
+- Basic POS/order capture, menu/configuration projection use, table/service selection and local totals.
+- Local cash-sale evidence.
+- Local KOT creation and local kitchen output where hardware is available.
+- Durable local storage, restart recovery and pending-upload intent.
+- Clear status distinction: saved locally, syncing, synchronized, rejected/conflict or needs review.
+- Local shift evidence and unsynchronized totals.
+
+Must wait for connectivity or central authorization:
+- New cloud authentication/password reset and device enrollment.
+- Receipt of new OneCity orders and immediate restaurant acceptance promises.
+- Provider verification of digital payments, refunds and payout/settlement actions.
+- Published configuration, entitlement or catalogue changes not already available in the scoped local projection.
+- Privileged role/permission changes and other central administrative actions.
+- Rider dispatch, live tracking and remote suspension propagation.
+
+Requires explicit conflict/reconciliation handling:
+- Replayed commands, duplicate requests and at-least-once network delivery.
+- Concurrent changes to an open POS-owned order, stale expected versions and already-submitted order changes.
+- Inventory reservation/stock changes and price/configuration version changes.
+- Digital payment evidence versus provider-confirmed payment.
+- Cash variance, refund, rider remittance and settlement discrepancies.
+- Printer crash/reprint uncertainty, device disk failure, corrupted backup, clock skew, reordered events and destroyed-device recovery.
+
+Offline data must not be silently deleted on logout, configuration failure or suspension. An expired grant may deny privileged new work while preserving evidence and recovery paths. Every offline transaction/command needs an idempotency identity.
+
+Evidence: Product Architecture §70, §71, §§81–83, §101–103; Product Flow §§28–32, 37; PRD §§1, 6–7, 9, 11, 13.
+
+6. CONFIGURATION IMPLICATIONS
+-----------------------------
+The OS/configurator is the place where Proviyaa sells, provisions and controls the restaurant capability. The lifecycle is:
+
+sales requirement → confirmed disposition → organization/location → subscription/entitlement → permitted features → restaurant preset → settings/workflow preview → approved version → device enrollment → test sale/kitchen output → training/go-live evidence.
+
+The POS should consume a published, versioned configuration snapshot rather than receive client-specific code. Configuration can control:
+- Restaurant modules and feature visibility.
+- Role/action permissions and location scope.
+- Navigation, labels, fields, layout tokens and workflow presets.
+- Channels such as dine-in, takeaway and delivery.
+- Menu/category/item/modifier availability, pricing/tax snapshots and kitchen routing.
+- Payment methods, invoice settings, delivery rules and other market configuration where approved.
+
+Configuration cannot disable runtime invariants: tenant isolation, authorization, financial evidence, audit, valid state transitions and idempotency. A published configuration normally affects new transactions; an active order retains the configuration and price version under which it began. Enablement should use feature/version/entitlement/configuration/rollout state, not code forks.
+
+Evidence: Product Flow §§1, 6–7, 31, 34, 38–40; Product Architecture §§8–10, 35–36, 99, 101–103; viyaa routes §§3–5, 7–9; PRD §§2–3, 7–8, 12–14.
+
+7. OPEN QUESTIONS — OWNER APPROVAL REQUIRED
+-------------------------------------------
+1. What is the first production device/OS and printer setup? Source: Product Architecture §70 “Device Platform”; PRD §15 questions 1 and 5; Product Architecture §112 build contract.
+2. Is one primary POS device sufficient, or must multiple counters/separate KDS coordinate during an outage? Source: Product Architecture §71 “Offline-first operations”; PRD §2 review question and §15 question 2.
+3. Is the first pilot cash-only, with digital payments enabled only after online/provider verification? Source: Product Architecture §104 “Financial Model”; PRD §15 question 3 and §9.
+4. What offline authorization duration, heartbeat interval and online-order acceptance timeout are approved? Source: Product Architecture §71 and §102; PRD §2 and §15 question 5.
+5. Is PowerSync the selected single sync implementation, or is another implementation approved? Source: Product Flow §28 “Database Development Strategy”; PRD §2 and §7.
+6. Which Supabase project/environment is staging, and who owns central schema/migrations? Source: Product Architecture §§12, 74–75; PRD §§5, 7–8, 14; current PREFLIGHT checks “Supabase MCP” and “Supabase CLI”.
+7. Which names are canonical: Proviyaa/Proviyaa Global, VINII/Vinii, One Latur/OneCity and OnLatur? Source: Product Architecture §§1, 45, 51, 109; viyaa routes §§1–2; PRD §15 and evidence/limitations.
+8. Which Figma board/node set is approved for the restaurant POS itself, versus the retrieved App Builder node 275:304? Source: docs/FIGMA-DESIGN-CONTEXT.md “Screen/state inventory”; PRD §12 and §15 question 4.
+9. What are the approved finance, tax, invoice, fee and settlement rules for the pilot? Source: Product Architecture §§17, 104–106; PRD §9.
+10. What is the approved SQLite Flutter package and migration/backup policy? Source: Product Architecture §71; PRD §7; current user instruction requiring app-managed SQLite, first-launch creation and versioned migrations. MySQL is not part of the approved architecture.
+
+8. TRACEABILITY OF MAJOR CONCLUSIONS
+------------------------------------
+Conclusion A — POS is a separate experience over a shared ecosystem, not a replacement OS:
+Product Architecture §§1–3, 9, 109; Product Flow §§1, 5; viyaa routes §§1–3; PRD §§1, 3.
+
+Conclusion B — Commerce, customer, payment and settlement truth is shared and domain-owned:
+Product Architecture §§3, 12, 17, 74–75, 104; Product Flow §§3, 28–30; viyaa routes §§6, 9–11; PRD §§1, 5, 9–10.
+
+Conclusion C — POS is local-first, but SQLite is a restricted working store and cloud reconciliation remains authoritative:
+Product Architecture §71 and §§81–82; Product Flow §§28–30; PRD §§1, 6–7, 11.
+
+Conclusion D — Offline cash and kitchen operation can continue, while digital verification, cloud orders, privileged changes and settlement require connectivity/central authority:
+Product Architecture §§70–71 and §104; Product Flow §§7, 28–30; PRD §§6, 9, 11.
+
+Conclusion E — Configuration activates capabilities progressively without client-specific code forks:
+Product Flow §§1, 6, 31, 34, 38–40; Product Architecture §§8–10, 35–36; PRD §§2, 7–8, 13–14.
+
+Conclusion F — The path from kitchen to rider is a shared order → fulfilment → delivery chain with separate state and financial evidence:
+Product Architecture §§25, 51, 77, 91–94, 104; viyaa routes §§9–11; PRD §§3, 9–10.
+
+Conclusion G — Build readiness requires a full handoff chain from Figma/page/route through API, permission, event, database, audit and QA:
+Product Architecture §§97, 99, 112; PRD §12 and §14; docs/FIGMA-DESIGN-CONTEXT.md node 275:304.
+
+Implementation boundary for the next approved phase
+---------------------------------------------------
+The requested SQLite direction is recorded but not implemented in this source-reading task: use a Flutter SQLite package, create the database automatically on first launch, apply versioned migrations, preserve pending local evidence, and do not install or configure MySQL. No application behavior, dependency, schema, migration or sync architecture was changed here.

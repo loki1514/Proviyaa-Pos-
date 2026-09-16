@@ -1,0 +1,14 @@
+PROVIYAA POS — LOCAL DEVELOPMENT
+
+Flutter/Dart are not installed. Do not install system-wide without approval.
+
+When available:
+1. cd /Users/lohit/agentic-os-coder/proviyaa-pos
+2. flutter doctor
+3. flutter devices
+4. flutter pub get
+5. flutter analyze
+6. flutter test
+7. flutter run --dart-define=APP_ENV=local --dart-define=DATA_MODE=local_demo --dart-define=SYNC_ENABLED=false
+
+Config is read through lib/config/app_config.dart using --dart-define. Flutter does not automatically load env files. Copy .env.local.example to .env.local, fill only local-safe values, and run ./tool/run_local.sh; the launcher translates the allowlisted values into --dart-define flags. Keep local_demo and sync disabled unless the environment is explicitly approved. Never embed service-role keys, database passwords, MCP tokens or production credentials.

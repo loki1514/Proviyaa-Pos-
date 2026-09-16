@@ -1,0 +1,35 @@
+name: proviyaa_pos
+description: Local-first Restaurant POS foundation for Proviyaa.
+publish_to: "none"
+version: 0.1.0+1
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+dependencies:
+  drift: ^2.35.0
+  drift_flutter: ^0.3.1
+  drift_sqlite_async: ^0.3.1
+  flutter:
+    sdk: flutter
+  powersync: ^2.4.0
+  supabase_flutter: ^2.17.2
+  uuid: ^4.6.0
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: 5.0.0
+  drift_dev: ^2.35.0
+  build_runner: ^2.16.1
+flutter:
+  uses-material-design: true
+  # Bundled locally, not fetched at runtime — this is a local-first,
+  # offline-capable POS (PRD §6/§13 Phase C exit: "internet disabled and
+  # restart tested"), so typography can't depend on network access.
+  # These are the exact families the original Figma capture used
+  # (docs/FIGMA-DESIGN-CONTEXT.md: font-['Inter:...'], font-['Geist:...']).
+  fonts:
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter.ttf
+    - family: Geist
+      fonts:
+        - asset: assets/fonts/Geist.ttf

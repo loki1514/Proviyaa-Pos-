@@ -1,0 +1,7 @@
+PROVIYAA POS — EXISTING DATABASE MAP
+STATUS: BLOCKED / READ-ONLY INSPECTION NOT PERFORMED
+
+Existing OS repository: https://github.com/loki1514/Repo-1-
+No Supabase project reference, authenticated read-only MCP session, schema dump or authorized checkout was supplied. This file intentionally does not claim table names, keys, migrations, indexes, RLS policies, functions, tenant boundaries or reusable IDs.
+
+Next handoff: supply staging/development project reference; authenticate official project-scoped read-only Supabase MCP; inspect metadata, migrations, constraints, indexes, RLS and functions; compare deployed schema with Repo-1- migrations; record additive gaps before SQL. Never apply migrations until explicit approval.

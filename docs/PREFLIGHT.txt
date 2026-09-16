@@ -1,0 +1,49 @@
+PROVIYAA POS — PREFLIGHT REPORT
+Date: 2026-09-14
+Target: /Users/lohit/agentic-os-coder/proviyaa-pos
+
+V1 DECISION STATUS
+------------------
+Owner-approved V1 decisions are recorded in docs/DECISIONS-AND-QUESTIONS.txt as D01–D10. They are active unless explicitly replaced by the owner.
+
+CHECK | RESULT | EVIDENCE
+Folder exists | PASS | Existing target was empty at initial preflight; current scaffold is present.
+Existing work preserved | PASS | Source copies remain byte-verified; no prior work was overwritten.
+Git repository | NOT YET CONFIGURED | Target has no local Git repository/remote configured.
+Existing instructions | PASS | Canonical sources, PRD, Figma context and decision records are present.
+Canonical sources | PASS | Three originals found in /Users/lohit/Downloads/Vini-os and copied unchanged.
+Complete source read | PASS | Product Flow 1,604 lines; Product Architecture 3,247 lines; viyaa routes 920 lines.
+PRD read | PASS | docs/PRD-DAY-03-RESTAURANT-POS.txt read completely.
+Flutter/Dart | PASS | Flutter 3.47.4; Dart 3.13.3 installed locally.
+POS target | APPROVED | Windows POS laptop; first operating profile is POS with an 80 mm printer.
+Offline topology | APPROVED | One primary POS per location; multi-terminal/KDS offline coordination deferred.
+Offline authorization | APPROVED | Staff authorization 24 hours; device heartbeat 60 seconds; OneCity reachability timeout 5 minutes.
+Payment posture | APPROVED | Cash-first pilot; digital payments remain pending provider verification.
+Printer/scanner posture | PARTIALLY APPROVED | USB/LAN printer support, same-device kitchen printing and optional scanner approved; exact hardware models/protocols remain unconfirmed.
+SQLite technology | APPROVED | Drift with SQLite, automatic first-launch creation, explicit numbered migrations, no automatic unsynced-record deletion, interruption/recovery tests.
+SQLite implementation | PASS | Drift 2.35 via drift_flutter added; `lib/data/app_database.dart` auto-creates `proviyaa_pos.sqlite` on first open with schemaVersion 1; `lib/data/drift_local_store.dart` implements PosLocalStore; 4 new tests cover first-launch creation, idempotent replay and interruption/recovery — all pass (2026-09-15).
+Sync direction | APPROVED DIRECTION | PowerSync after Flutter compatibility/cost spike; no competing custom sync system for the same records.
+Supabase environment | PROJECT REFERENCE CONFIRMED, ACCESS NOT SET UP | Owner confirmed 2026-09-15 that the project already in .env.local is the approved staging project (see Q04). Region/environment label, authorized read-only MCP access, and backup/recovery policy are still unconfirmed.
+Supabase CLI | AVAILABLE, NOT AUTHORIZED | CLI 2.114.0; no staging project/credentials supplied.
+Figma MCP | CONTEXT RETRIEVED, PROVISIONAL | Node 275:304 context saved read-only; final Restaurant POS file URL/node set still requires owner confirmation.
+Supabase MCP | NOT CONFIGURED | Requires the confirmed staging project reference and project-scoped read-only authentication.
+NotebookLM MCP | NOT VERIFIED | Not established in this POS preflight.
+Finance/tax | PARTIALLY APPROVED, DETAILS OPEN | Cash-first and pending digital verification approved; jurisdictional tax, invoice, fees, settlement and approval rules remain unconfirmed.
+Run target/tests | PASS | flutter analyze and flutter test pass for the current scaffold (7 tests, 2026-09-15).
+Figma node 275:304 content | CONFIRMED OUT OF SCOPE | Vendor/back-office "App Builder" admin panel, not a Restaurant POS screen. Superseded — see below.
+V1 screen reference | RESOLVED | 36 PNG exports at v1/ (light+dark pairs of 17 screens) are the approved 1:1 design reference as of 2026-09-15. All 36 read in full. No presentation code may deviate from them. See Q02.
+Shift open/close UI | OPEN | No screen in the 36 covers opening float / counted cash / variance. "Store & Channel Control" is store-open/close and channel toggles, a different concern. Owner input needed before shift UI is rebuilt.
+MySQL | NOT INSTALLED/CONFIGURED | MySQL is prohibited by the V1 decision record.
+Remote changes | NONE | No GitHub, Supabase, Figma, Vercel or production change made.
+
+FINAL OWNER CONFIRMATIONS STILL REQUIRED
+-----------------------------------------
+1. Finance/tax: jurisdiction, tax, invoice/receipt, fee, refund, settlement and approval rules.
+2. Figma: approved Restaurant POS file URL and node set; node 275:304 is provisional only.
+3. Device/hardware: Windows version/laptop, exact 80 mm printer and driver/protocol, cash drawer, optional scanner, and kitchen-printer details.
+4. Supabase staging: project reference CONFIRMED 2026-09-15 (see Q04); environment/region label, authorized read-only access, backup/recovery policy and migration approval owner remain open.
+5. PowerSync spike: acceptance criteria, cost ceiling and approval owner.
+
+SAFE BUILD DECISION
+-------------------
+Feature work remains governed by the active V1 decisions. No application behavior, Supabase schema, migration, sync implementation, Figma file or remote service was changed by this decision-record update. When implementation resumes, the local database must use Drift/SQLite with first-launch creation, explicit numbered migrations and interruption/recovery coverage; MySQL must not be introduced.

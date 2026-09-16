@@ -1,0 +1,7 @@
+PROVIYAA POS — FIGMA TRACEABILITY
+Reference: https://www.figma.com/design/4Cxv5C6u7O9ipxCiz7AJFb/v1?node-id=275-304&t=OWxiia0L9TokGT2O-1
+Recorded node: 275-304
+Status: URL recorded; approval, screenshots, variables, components and states not verified in this build.
+
+Required mapping: FIGMA NODE -> PAGE-ID -> ROUTE-ID -> COMPONENT-ID -> REQUIREMENT-ID -> API-ID -> PERMISSION-ID -> EVENT-ID -> DATABASE -> QA-ID
+Required states: empty, loading, active, offline, syncing, synchronized, conflict, denied, error, reduced-motion/accessibility.

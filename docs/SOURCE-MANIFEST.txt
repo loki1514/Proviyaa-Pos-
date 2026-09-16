@@ -1,0 +1,23 @@
+PROVIYAA POS SOURCE MANIFEST
+Generated during non-destructive preflight.
+Date received: 2026-09-14T18:41:38Z
+Complete file read: YES for all three supplied converted text files.
+Copies are byte-for-byte copies; do not edit them in place.
+
+Original filename: Product Flow .converted.txt
+Original path: /Users/lohit/Downloads/Vini-os/Product Flow .converted.txt
+Local copy path: /Users/lohit/agentic-os-coder/proviyaa-pos/docs/sources/Product Flow .converted.txt
+SHA-256: 08f47a97a21bececbe6fb6ba9256ae4d33b2f9fb843da105629e1724a5ce5da4
+Complete file read: YES
+
+Original filename: Product Architecture .converted.txt
+Original path: /Users/lohit/Downloads/Vini-os/Product Architecture .converted.txt
+Local copy path: /Users/lohit/agentic-os-coder/proviyaa-pos/docs/sources/Product Architecture .converted.txt
+SHA-256: 2b4b678829a041a66836747e69667ef47a6ff1aed8742a5991c2f23ed9fa146d
+Complete file read: YES
+
+Original filename: viyaa routes.converted.txt
+Original path: /Users/lohit/Downloads/Vini-os/viyaa routes.converted.txt
+Local copy path: /Users/lohit/agentic-os-coder/proviyaa-pos/docs/sources/viyaa routes.converted.txt
+SHA-256: 867c31a31b88cbc22ce9be4a5cfe3118080f2ccb84210ed98e62c24a23c8ad8f
+Complete file read: YES

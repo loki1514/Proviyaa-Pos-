@@ -1,0 +1,147 @@
+import '../domain/restaurant_table.dart';
+
+/// Seeded local-demo table layout — stands in for the real floor plan
+/// until device/config bootstrap (Phase B) exists. Shape matches the
+/// v1/POS-TABLES-DEFAULT.png reference: 18 tables, indoor zone, a mix
+/// of occupied/available/reserved/cleaning.
+class LocalTableCatalog {
+  static const tables = <RestaurantTable>[
+    RestaurantTable(
+        id: 'T1',
+        label: 'T1',
+        seats: 4,
+        zone: TableZone.indoor,
+        status: TableStatus.occupied,
+        guestCount: 4,
+        elapsedMinutes: 34,
+        orderTotalMinor: 84000),
+    RestaurantTable(
+        id: 'T2',
+        label: 'T2',
+        seats: 4,
+        zone: TableZone.indoor,
+        status: TableStatus.available),
+    RestaurantTable(
+        id: 'T3',
+        label: 'T3',
+        seats: 2,
+        zone: TableZone.indoor,
+        status: TableStatus.occupied,
+        guestCount: 2,
+        elapsedMinutes: 18,
+        orderTotalMinor: 45000),
+    RestaurantTable(
+        id: 'T4',
+        label: 'T4',
+        seats: 4,
+        zone: TableZone.indoor,
+        status: TableStatus.reserved,
+        reservedByName: 'Sharma'),
+    RestaurantTable(
+        id: 'T5',
+        label: 'T5',
+        seats: 4,
+        zone: TableZone.indoor,
+        status: TableStatus.available),
+    RestaurantTable(
+        id: 'T6',
+        label: 'T6',
+        seats: 6,
+        zone: TableZone.indoor,
+        status: TableStatus.occupied,
+        guestCount: 6,
+        elapsedMinutes: 52,
+        orderTotalMinor: 121000),
+    RestaurantTable(
+        id: 'T7',
+        label: 'T7',
+        seats: 4,
+        zone: TableZone.indoor,
+        status: TableStatus.cleaning),
+    RestaurantTable(
+        id: 'T8',
+        label: 'T8',
+        seats: 4,
+        zone: TableZone.indoor,
+        status: TableStatus.occupied,
+        guestCount: 4,
+        elapsedMinutes: 12,
+        orderTotalMinor: 38000),
+    RestaurantTable(
+        id: 'T9',
+        label: 'T9',
+        seats: 4,
+        zone: TableZone.indoor,
+        status: TableStatus.available),
+    RestaurantTable(
+        id: 'T10',
+        label: 'T10',
+        seats: 3,
+        zone: TableZone.indoor,
+        status: TableStatus.occupied,
+        guestCount: 3,
+        elapsedMinutes: 25,
+        orderTotalMinor: 62000),
+    RestaurantTable(
+        id: 'T11',
+        label: 'T11',
+        seats: 4,
+        zone: TableZone.indoor,
+        status: TableStatus.reserved,
+        reservedByName: 'Gupta'),
+    RestaurantTable(
+        id: 'T12',
+        label: 'T12',
+        seats: 2,
+        zone: TableZone.indoor,
+        status: TableStatus.occupied,
+        guestCount: 2,
+        elapsedMinutes: 40,
+        orderTotalMinor: 55000),
+    RestaurantTable(
+        id: 'T13',
+        label: 'T13',
+        seats: 4,
+        zone: TableZone.outdoor,
+        status: TableStatus.available),
+    RestaurantTable(
+        id: 'T14',
+        label: 'T14',
+        seats: 5,
+        zone: TableZone.outdoor,
+        status: TableStatus.occupied,
+        guestCount: 5,
+        elapsedMinutes: 65,
+        orderTotalMinor: 148000),
+    RestaurantTable(
+        id: 'T15',
+        label: 'T15',
+        seats: 4,
+        zone: TableZone.outdoor,
+        status: TableStatus.available),
+    RestaurantTable(
+        id: 'T16',
+        label: 'T16',
+        seats: 4,
+        zone: TableZone.outdoor,
+        status: TableStatus.occupied,
+        guestCount: 4,
+        elapsedMinutes: 45,
+        orderTotalMinor: 91000),
+    RestaurantTable(
+        id: 'T17',
+        label: 'T17',
+        seats: 4,
+        zone: TableZone.privateDining,
+        status: TableStatus.available),
+    RestaurantTable(
+        id: 'T18',
+        label: 'T18',
+        seats: 3,
+        zone: TableZone.privateDining,
+        status: TableStatus.occupied,
+        guestCount: 3,
+        elapsedMinutes: 30,
+        orderTotalMinor: 72000),
+  ];
+}

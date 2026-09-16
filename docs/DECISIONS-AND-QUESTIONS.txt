@@ -1,0 +1,152 @@
+PROVIYAA POS — V1 DECISIONS AND QUESTIONS
+
+Purpose
+-------
+This document records owner-approved V1 decisions. Each decision remains in force unless the owner explicitly replaces it in a future decision record. Unresolved details remain clearly separated below; they must not be silently assumed.
+
+OWNER-APPROVED V1 DECISIONS
+----------------------------
+D01 — Windows POS and local hardware
+- The first POS application target is Windows.
+- Each enrolled location uses a local SQLite database on the POS laptop.
+- The POS supports USB/LAN printer connectivity.
+- The POS works without internet and synchronizes to Supabase/Proviyaa when connectivity is available.
+- The initial operating profile is POS with an 80 mm printer.
+- A scanner is optional.
+- Kitchen output initially uses same-device kitchen printing.
+- These choices supersede the earlier open question about Windows versus Android as the first target.
+
+D02 — Offline topology
+- One primary POS per location supports offline operation.
+- Multi-terminal offline coordination and separate KDS offline coordination are deferred.
+- The POS must not imply shared offline consistency across multiple devices in V1.
+
+D03 — Pilot payment posture
+- The first pilot is cash-first.
+- Digital payments remain pending verification until an approved provider integration exists.
+- A local digital-payment action must not be represented as provider-confirmed payment.
+
+D04 — Connectivity and authorization limits
+- Offline staff authorization duration: 24 hours.
+- Device heartbeat interval: 60 seconds.
+- OneCity restaurant reachability timeout: 5 minutes.
+- The POS preserves local evidence when authorization or connectivity expires; it does not silently delete unsynced records.
+
+D05 — Synchronization direction
+- PowerSync is the selected synchronization direction, subject to a Flutter compatibility and cost spike.
+- Do not build a competing custom synchronization system for the same records.
+- The spike may validate compatibility, cost, operational limits and failure behavior; it does not authorize production rollout by itself.
+
+D06 — Supabase environment and ownership
+- POS work uses a separate Supabase staging environment.
+- The existing Proviyaa OS repository owns central schema migrations and shared contracts.
+- The POS must not create a competing migration history or apply changes to production under these decisions.
+
+D07 — Canonical product names
+CORRECTED 2026-09-15 after reading all three source documents in full this session (they were only summarized before). The primary sources consistently use:
+- Proviyaa / Proviyaa Global (not "Proviyaa OS") — the whole ecosystem; "Master"/"Proviyaa Master" is its control plane.
+- VINII POS — the merchant application family, with Restaurant / Store / Service as its three configurable verticals. The 36 reference screens literally show the product wordmark as "VINII POS" with "Restaurant" as the active vertical, not "VINII Restaurant POS" as one compound name.
+- One Latur — the actual deployed customer-marketplace instance. OneCity is the generic pattern name ("the current One Latur model should be designed as the first implementation of a generic OneCity Marketplace") — both are correct, at different levels of specificity; this repo is building for the One Latur instance.
+- OnLatur — delivery/fulfilment, bundling the rider app, dispatch and delivery engine as one product (not split into separate "Proviyaa Fulfilment" and "VINII Rider" products, though those are internal domain names within OnLatur).
+Superseded: the previous list below (Proviyaa OS / VINII Restaurant POS / OneCity / Proviyaa Fulfilment / VINII Rider) — kept struck through for history, not to be reused.
+~~- Proviyaa OS~~
+~~- VINII Restaurant POS~~
+~~- OneCity~~
+~~- Proviyaa Fulfilment~~
+~~- VINII Rider~~
+
+D08 — Figma approval status
+- Figma node 275:304 is provisional reference material only.
+- It is not final Restaurant POS approval.
+- Final implementation requires owner confirmation of the approved Figma file URL and Restaurant POS node set.
+- Until then, no screen is to be treated as final UI approval.
+
+D09 — V1 finance posture
+- Apply the V1 finance rules already recorded in the approved POS source/PRD context:
+  - Keep order, kitchen, delivery, payment and settlement states separate.
+  - Store money as integer minor units with currency and explicit rounding rules.
+  - Verify and deduplicate provider confirmations server-side.
+  - Permit offline cash evidence; keep digital evidence pending until provider verification.
+  - Use immutable financial postings or a validated equivalent; corrections are reversals, not edits to settled history.
+  - Keep refunds authorized, idempotent and linked to the original payment.
+  - Keep customer payments, Proviyaa subscription fees, merchant payable, platform/rider fees, rider cash custody and settlement distinct.
+  - Do not execute settlement payouts without reconciliation and required evidence.
+- These decisions do not approve jurisdiction-specific tax, invoice, fee percentage or settlement rules; those remain open below.
+
+D10 — Local database technology and recovery
+- Use Drift with SQLite through a Flutter application dependency.
+- Create the database automatically on first launch.
+- Use explicit numbered local migrations.
+- Do not automatically delete unsynced records.
+- Include migration interruption and recovery tests.
+- Do not install or configure MySQL.
+- Drift/SQLite implementation remains a subsequent implementation task; this record does not claim that it is already wired into the application.
+
+REMAINING DETAILS REQUIRING FINAL OWNER CONFIRMATION
+----------------------------------------------------
+Q01 — Finance, tax, invoice and settlement rules
+- Decision required: approve the pilot's jurisdiction-specific treatment for tax calculation, tax display, receipts/invoices, refunds, fees, merchant payable, rider cash custody and settlement.
+- Confirm whether the pilot is receipt-only or must issue a tax invoice; identify the required invoice fields, numbering rules, rounding method and retention period.
+- Confirm the tax authority/jurisdiction, tax categories/rates, inclusive versus exclusive pricing, treatment of discounts, delivery fees and refunds, and who is responsible for final compliance approval.
+- Confirm commercial rules without inventing percentages: platform fee, delivery fee, rider compensation, merchant payable, commission, cash variance and any Proviyaa subscription charge must be separately defined.
+- Confirm who may authorize voids, refunds, discounts, cash paid-outs and settlement adjustments, including thresholds and whether approval is single-person or multi-person.
+- Confirm the source of truth for provider payment confirmation and the required evidence for a cash collection, rider remittance and merchant settlement.
+- Closure evidence: an approved finance/tax rules document, example transactions for cash sale, prepaid order, COD, refund and settlement variance, plus named approval owners. Until then, the app may record local cash evidence but must not claim tax compliance, provider verification or settlement completion.
+- The cash-first and pending-digital-verification posture is approved; these jurisdictional and commercial details are not.
+
+Q02 — Final Figma approval and scope
+- RESOLVED 2026-09-15: the Figma node (275:304, "App Builder"/Vendor Panel) was confirmed a mismatch — it is the OS/vendor-configuration surface, not a Restaurant POS operator screen. The owner then supplied the actual reference set as 36 exported PNG screens at `v1/` in this repo (light "DEFAULT" and dark "V3" pairs of the same screens): POS (order-taking), Menu Management, Tables, Dine In Orders, Takeaway Orders, Payment, KOT/Kitchen Display, Hold Orders, All Orders, Delivery Orders, Online Orders, Store & Channel Control, Item Availability, Off Items, Item Off Duration, Zomato Orders, Swiggy Orders. All 36 were read. These are the approved 1:1 reference for implementation — no invented layout, copy, or styling from here on. Node 275:304 is confirmed out of scope for this app.
+- Design system observed across all 36: brand "VINII POS", green square "V" mark, bright lime-green brand accent (~ the same "#76EC00 Vini POS Green" the app-builder capture used), Inter-style sans-serif, card-based layout with rounded corners, light/dark theme pair (not two separate designs). Status colors: green = available/ready/new, blue = occupied/info, amber = preparing/reserved/pending, purple = payment pending, red = delayed/urgent/unavailable/cancelled. Most screens use a persistent top tab bar (POS/Tables/All Orders/Dine In/Takeaway/Delivery/Online/Menu); Payment and KOT/Kitchen use a collapsed left icon-rail nav instead — both are real layout modes to reproduce, not a discrepancy.
+- Gap found: none of the 36 screens is an explicit "open/close shift, opening float, counted cash, variance" screen. "Store & Channel Control" covers opening/closing the *store* and toggling aggregator channels, which is a different concern. This needs an owner answer (see PREFLIGHT.txt) before shift UI is rebuilt.
+- Screens directly needed for V1 Phase C (PRD §13): POS, Tables, Dine In Orders, Takeaway Orders, Payment, KOT/Kitchen Display. Menu Management, Hold Orders, All Orders are close secondary needs. Delivery/Online/Zomato/Swiggy/Store Control/Item Availability/Off Items map to later PRD phases (E: OneCity-equivalent demand, or store configuration) and are catalogued but not blocking V1.
+- Decision required: identify the final Figma file URL and the exact Restaurant POS node set to implement.
+- Confirm whether the approved set covers the operator POS, kitchen/KOT, shift/cash, offline/sync/reconciliation and error states, or only an App Builder/configurator surface.
+- For every approved screen, provide node ID, route/page ID, actor, purpose, entry conditions, actions, permissions and states: loading, empty, active, offline, syncing, synchronized, conflict, denied and error.
+- Confirm the approved design tokens/assets, typography, responsive behavior for the selected Windows laptop size, accessibility/reduced-motion states and printer-related feedback patterns.
+- Confirm which existing Figma content is reference-only and must not be implemented. Node `275:304` remains provisional App Builder material and is not final Restaurant POS approval.
+- Closure evidence: owner-approved Figma URL/node inventory and a screen-to-requirement traceability list. Until then, no screen should be treated as final UI approval and no new visual system should be introduced.
+
+Q03 — Exact Windows device and hardware models
+- Decision required: approve the first pilot hardware profile and its support boundary.
+- Confirm Windows edition/version, CPU/RAM/storage, screen size/resolution, touchscreen or keyboard/mouse mode, power/UPS expectations, local user policy and whether the laptop is dedicated to POS operation.
+- Confirm the 80 mm receipt/kitchen printer model, USB versus LAN connection, driver or protocol, paper width/tolerance, print density, cash-drawer kick support, cutter behavior and recovery/reprint expectations.
+- Confirm whether the receipt printer and kitchen printer are the same physical device initially, or whether “same-device kitchen printing” means the same POS laptop driving a separate printer.
+- Confirm scanner status: optional for V1, supported model/protocol if used, and whether barcode scanning is out of the first pilot acceptance path.
+- Confirm cash drawer requirement, printer offline behavior, duplicate-print handling, paper-out detection and manual reprint authorization.
+- Closure evidence: approved hardware bill of materials, tested Windows image, driver/protocol details, printer samples and a hardware acceptance test covering disconnect, restart, paper-out and reprint. Until then, hardware integration remains an adapter boundary.
+
+Q04 — Supabase staging project, access and recovery
+- PARTIALLY RESOLVED 2026-09-15: owner confirmed the project already present in .env.local (URL + publishable key) is the approved staging project. Region/environment label, authorized project-scoped read-only MCP access, data-masking confirmation, and backup/recovery/migration-approval details below remain open.
+- Decision required: identify the separate staging project used for POS work and confirm its ownership boundary.
+- Supply the staging project reference, region, environment label, authorized project-scoped read-only MCP access and the approved client configuration path. Credentials must never be committed or pasted into chat.
+- Confirm that Proviyaa OS remains the owner of central schema migrations, shared contracts, RLS policy changes and production promotion. The POS repository may consume pinned contracts and prepare proposals but must not create a competing migration history.
+- Confirm which staging data is synthetic, how customer/financial data is excluded or masked, and whether any existing OS records may be inspected.
+- Confirm backup frequency, restore-test frequency, retention, rollback authority, incident owner and the approval gate before any migration reaches staging or production.
+- Closure evidence: project reference, environment classification, access approval, database ownership note, backup/restore evidence and named migration approver. Until then, no Supabase schema inspection or database write is authorized.
+
+Q05 — PowerSync compatibility and cost spike
+- PARTIAL CLIENT-SIDE SPIKE DONE 2026-09-15, real findings (not a guess — checked current docs/pub.dev, not stale training data):
+  - `powersync` 2.4.0 and `drift_sqlite_async` 0.3.1 (the official, currently-Beta Drift bridge) resolve and compile cleanly alongside our existing drift 2.35.0/drift_flutter 0.3.1 stack on this Flutter 3.47.4 target — no version conflicts found.
+  - Our existing `AppDatabase` (lib/data/app_database.dart) needs ZERO schema changes to adopt PowerSync — it already takes a plain Drift `QueryExecutor`. Only the connection construction would change, from `driftDatabase()` to `SqliteAsyncDriftConnection(powerSyncDatabase)`.
+  - IMPORTANT for the go/no-go call: PowerSync would REPLACE `lib/application/sync_worker.dart`'s outbox, not sit beside it — PowerSync tracks local writes into its own CRUD queue, separate from our `pending_upload_intents` table. Running both would be exactly the "second competing queue" D05 forbids.
+  - Real pricing checked: Free tier $0/mo (2GB sync, 2 instances) but deactivates after 1 week idle — not suited to an on-and-off evaluation. Pro tier $49/mo removes that.
+  - A connector scaffold (`lib/data/powersync_connector_spike.dart`) compiles against the real `PowerSyncBackendConnector` API (fetchCredentials/uploadData) but is NOT wired into the app and has never connected to a live instance.
+  - What this session could not do, and does not do on the owner's behalf: create a PowerSync Cloud account/instance, or run the Supabase-side SQL to create a `powersync_role` with replication + a password and a `CREATE PUBLICATION`. Both need the owner directly.
+- Decision required: approve the time-box, budget, acceptance criteria and owner for the PowerSync evaluation; the decision does not yet authorize production rollout.
+- Decision required: approve the time-box, budget, acceptance criteria and owner for the PowerSync evaluation; the decision does not yet authorize production rollout.
+- The spike must test the selected Flutter/Windows target, Drift/SQLite interaction if applicable, local-first reads/writes, upload queuing, scoped downloads, reconnect behavior, duplicate/idempotent commands, stale-version conflicts and preservation of unsynced records.
+- Confirm the records and flows in scope: menu/config projection, one local cash order, order lines, KOT/print intent, payment evidence and sync/reconciliation status. Do not expand the spike into a second custom sync engine.
+- Confirm non-functional thresholds: startup/offline availability, acceptable sync lag, retry behavior, local storage growth, CPU/memory impact, data-scope enforcement, observability and recovery after interrupted migration or process/device restart.
+- Confirm cost inputs: licensing/subscription, hosting, bandwidth, support, staging and projected pilot usage. Also confirm the fallback decision path if the spike fails; any replacement requires a new explicit owner decision.
+- Closure evidence: written spike plan, test matrix, measured results, cost estimate, security/scope review, go/no-go recommendation and owner sign-off. Until then, PowerSync remains the selected direction and no competing custom synchronization system may be built for the same records.
+
+SOURCE-LEVEL ITEMS THAT REMAIN CONSTRAINED
+------------------------------------------
+- The broad ecosystem architecture remains future-capable, but V1 exposes only approved capabilities.
+- The POS consumes OS-owned configuration, contracts and authorized commands; it does not own central migrations.
+- Configuration cannot disable tenant isolation, authorization, financial evidence, audit, valid state transitions or idempotency.
+- Unsynced local evidence must survive logout, configuration failure, suspension and migration interruption according to the approved recovery policy.
+
+SUPERSESSION RULE
+-----------------
+A future change must explicitly identify the decision ID being replaced, state the new value, provide an effective date/version, and record the owner approval. Until then, D01–D10 remain the active V1 decisions.
