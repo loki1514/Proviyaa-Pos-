@@ -30,6 +30,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../application/payment_service.dart';
+import '../data/drift_all_orders_store.dart';
+import '../data/local_all_orders_catalog.dart';
 import '../domain/order.dart';
 import 'vinii_theme.dart';
 
@@ -40,9 +42,11 @@ class PaymentScreen extends StatefulWidget {
       {super.key,
       required this.order,
       required this.orderNumber,
-      required this.paymentService});
+      required this.paymentService,
+      this.allOrdersStore});
   final LocalOrder order;
   final PaymentService paymentService;
+  final DriftAllOrdersStore? allOrdersStore;
 
   /// A short display number — the real order-numbering scheme (PRD §11:
   /// "display numbering is separate [from the record id] and must not
@@ -103,11 +107,38 @@ class _PaymentScreenState extends State<PaymentScreen> {
               amountMinor: _totalMinor,
               receivedMinor: received)
           .timeout(const Duration(seconds: 8));
+
+      if (widget.allOrdersStore != null) {
+        final itemsCount =
+            widget.order.lines.fold<int>(0, (sum, l) => sum + l.quantity);
+        final itemsDesc = itemsCount == 1 ? '1 item' : '$itemsCount items';
+        final typeLabel = widget.order.orderType == OrderType.dineIn
+            ? 'Dine In'
+            : 'Takeaway';
+        final tableOrCust = widget.order.tableLabel != null &&
+                widget.order.tableLabel!.isNotEmpty
+            ? 'Table ${widget.order.tableLabel}'
+            : (typeLabel == 'Dine In' ? 'Dine In' : 'Walk-in Customer');
+
+        await widget.allOrdersStore!.insertOrder(
+          AllOrdersRow(
+            orderId: '#${widget.orderNumber}',
+            type: typeLabel,
+            source: 'Walk-in',
+            tableOrCustomer: tableOrCust,
+            itemsLabel: itemsDesc,
+            amountMinor: _totalMinor,
+            status: 'Completed',
+            time: 'Just now',
+          ),
+        );
+      }
+
       if (!mounted) return;
-      Navigator.of(context).pop();
+      Navigator.of(context).pop(true);
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(
-              'Cash payment recorded — ₹${(_totalMinor / 100).toStringAsFixed(2)}, change ₹${(change / 100).toStringAsFixed(2)}. (Not yet posted to central finance — that sync layer doesn\'t exist.)')));
+              'Payment completed — ₹${(_totalMinor / 100).toStringAsFixed(2)}, change ₹${(change / 100).toStringAsFixed(2)}. Order recorded in All Orders!')));
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(

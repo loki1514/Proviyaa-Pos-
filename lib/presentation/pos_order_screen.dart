@@ -15,7 +15,10 @@ import 'package:uuid/uuid.dart';
 import '../application/kitchen_service.dart';
 import '../application/order_service.dart';
 import '../application/payment_service.dart';
-import '../data/local_menu_catalog.dart';
+import '../data/drift_all_orders_store.dart';
+import '../data/drift_menu_store.dart';
+import '../data/drift_table_store.dart';
+import '../data/local_all_orders_catalog.dart';
 import '../domain/menu.dart';
 import '../domain/order.dart';
 import '../domain/restaurant_table.dart';
@@ -29,10 +32,16 @@ class PosOrderScreen extends StatefulWidget {
       required this.kitchenService,
       required this.paymentService,
       required this.locationId,
+      this.allOrdersStore,
+      this.tableStore,
+      this.menuStore,
       this.table});
   final OrderService orderService;
   final KitchenService kitchenService;
   final PaymentService paymentService;
+  final DriftAllOrdersStore? allOrdersStore;
+  final DriftTableStore? tableStore;
+  final DriftMenuStore? menuStore;
   final String locationId;
 
   /// Arrived here from a Tables card — dine-in against this table.
@@ -45,14 +54,50 @@ class PosOrderScreen extends StatefulWidget {
 
 class _PosOrderScreenState extends State<PosOrderScreen> {
   final _cart = <String, int>{}; // itemId -> quantity
+  final Map<String, MenuItem> _knownItems = {};
   String _categoryId = 'all';
-  late OrderType _orderType =
-      widget.table != null ? OrderType.dineIn : OrderType.takeaway;
+  String _searchQuery = '';
+  late OrderType _orderType;
+  RestaurantTable? _selectedTable;
+  List<RestaurantTable> _availableTables = [];
   bool _saving = false;
+  Stream<List<MenuCategory>>? _categoriesStream;
+  Stream<List<MenuItem>>? _itemsStream;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedTable = widget.table;
+    _orderType = widget.table != null ? OrderType.dineIn : OrderType.takeaway;
+    _initStreams();
+    if (widget.tableStore != null) {
+      widget.tableStore!.getAllTables().then((tables) {
+        if (mounted) {
+          setState(() {
+            _availableTables = tables;
+          });
+        }
+      });
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant PosOrderScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.menuStore != widget.menuStore) {
+      _initStreams();
+    }
+  }
+
+  void _initStreams() {
+    _categoriesStream =
+        widget.menuStore?.watchCategories() ?? Stream.value(const []);
+    _itemsStream = widget.menuStore?.watchItems() ?? Stream.value(const []);
+  }
 
   int get _subtotalMinor => _cart.entries.fold(0, (sum, e) {
-        final item = LocalMenuCatalog.items.firstWhere((i) => i.id == e.key);
-        return sum + item.priceMinor * e.value;
+        final item = _knownItems[e.key];
+        return sum + (item?.priceMinor ?? 0) * e.value;
       });
 
   int get _taxMinor =>
@@ -61,6 +106,7 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
 
   void _addItem(MenuItem item) {
     if (!item.available) return;
+    _knownItems[item.id] = item;
     setState(() => _cart.update(item.id, (q) => q + 1, ifAbsent: () => 1));
   }
 
@@ -75,11 +121,11 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
       });
 
   List<OrderLine> _lines() => _cart.entries.map((e) {
-        final item = LocalMenuCatalog.items.firstWhere((i) => i.id == e.key);
+        final item = _knownItems[e.key];
         return OrderLine(
-            itemId: item.id,
-            name: item.name,
-            unitMinor: item.priceMinor,
+            itemId: e.key,
+            name: item?.name ?? 'Item ${e.key}',
+            unitMinor: item?.priceMinor ?? 0,
             quantity: e.value);
       }).toList(growable: false);
 
@@ -92,7 +138,7 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
               clientOrderId: const Uuid().v4(),
               locationId: widget.locationId,
               orderType: _orderType,
-              tableLabel: widget.table?.label,
+              tableLabel: _selectedTable?.label,
               lines: _lines())
           // A local-database write should never take long; if the
           // platform's storage backend is stuck (e.g. a web build whose
@@ -129,92 +175,310 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
     final order = await _saveOrderAndKot();
     if (order == null || !mounted) return;
     setState(_cart.clear);
-    await Navigator.of(context).push(MaterialPageRoute(
+    final completed = await Navigator.of(context).push<bool>(MaterialPageRoute(
         builder: (_) => PaymentScreen(
             order: order,
             paymentService: widget.paymentService,
-            // No real order-numbering scheme yet (PRD §11); a short,
-            // visibly-a-placeholder display number stands in for it.
+            allOrdersStore: widget.allOrdersStore,
             orderNumber:
                 (DateTime.now().millisecondsSinceEpoch % 10000).toString())));
+    if (completed == true && mounted) {
+      Navigator.of(context).pop();
+    }
   }
 
-  void _notRebuiltYet(String what) =>
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('$what — not rebuilt yet against the real screens.')));
+  Future<void> _saveAndHold() async {
+    if (_cart.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+              'Warning: No items added. Please add items to the order before saving.'),
+          backgroundColor: Colors.orange,
+          behavior: SnackBarBehavior.floating,
+          duration: Duration(seconds: 3),
+        ),
+      );
+      return;
+    }
+
+    if (_orderType == OrderType.dineIn && _selectedTable == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Warning: Please select a table for Dine In orders.'),
+          backgroundColor: Colors.orange,
+          behavior: SnackBarBehavior.floating,
+          duration: Duration(seconds: 3),
+        ),
+      );
+      return;
+    }
+
+    setState(() => _saving = true);
+    try {
+      final orderNumber = (DateTime.now().millisecondsSinceEpoch % 10000)
+          .toString()
+          .padLeft(4, '0');
+
+      final order = await widget.orderService
+          .saveCashOrder(
+              clientOrderId: const Uuid().v4(),
+              locationId: widget.locationId,
+              orderType: _orderType,
+              tableLabel: _selectedTable?.label,
+              lines: _lines())
+          .timeout(const Duration(seconds: 8));
+
+      try {
+        await widget.kitchenService
+            .createTicketForOrder(order)
+            .timeout(const Duration(seconds: 8));
+      } catch (_) {}
+
+      if (widget.allOrdersStore != null) {
+        final itemsCount = _cart.values.fold<int>(0, (sum, q) => sum + q);
+        final itemsDesc = itemsCount == 1 ? '1 item' : '$itemsCount items';
+        final isDineIn = _orderType == OrderType.dineIn;
+        final tableOrCust = isDineIn
+            ? (_selectedTable != null
+                ? 'Table ${_selectedTable!.label}'
+                : 'Dine In')
+            : 'Walk-in Customer';
+
+        await widget.allOrdersStore!.insertOrder(
+          AllOrdersRow(
+            orderId: '#$orderNumber',
+            type: isDineIn ? 'Dine In' : 'Takeaway',
+            source: 'Walk-in',
+            tableOrCustomer: tableOrCust,
+            itemsLabel: itemsDesc,
+            amountMinor: _totalMinor,
+            status: 'Hold',
+            time: 'Just now',
+          ),
+        );
+      }
+
+      if (_orderType == OrderType.dineIn &&
+          _selectedTable != null &&
+          widget.tableStore != null) {
+        final currentTable = _selectedTable!;
+        await widget.tableStore!.updateTable(
+          RestaurantTable(
+            id: currentTable.id,
+            label: currentTable.label,
+            seats: currentTable.seats,
+            zone: currentTable.zone,
+            status: TableStatus.occupied,
+            guestCount: currentTable.guestCount ?? currentTable.seats,
+            elapsedMinutes: 0,
+            orderTotalMinor: _totalMinor,
+            reservedByName: currentTable.reservedByName,
+            reservedAt: currentTable.reservedAt,
+          ),
+        );
+      }
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+              'Order #$orderNumber saved on Hold${_selectedTable != null ? " for Table ${_selectedTable!.label}" : ""}.'),
+          backgroundColor: Colors.green,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      Navigator.of(context).pop();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e is TimeoutException
+                ? 'Saving is taking too long — the local database may be unavailable. Please try again.'
+                : 'Could not save the held order: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-          title: Text(widget.table != null
-              ? '${widget.table!.label} — New Order'
-              : 'New Order')),
-      body: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        _CategorySidebar(
-            selected: _categoryId,
-            onSelect: (id) => setState(() => _categoryId = id)),
-        Expanded(
-            flex: 3,
-            child: _ItemGrid(categoryId: _categoryId, onTap: _addItem)),
-        SizedBox(
-            width: 320,
-            child: _OrderPanel(
-                table: widget.table,
-                orderType: _orderType,
-                onOrderTypeChanged: widget.table == null
-                    ? (t) => setState(() => _orderType = t)
-                    : null,
-                cart: _cart,
-                subtotalMinor: _subtotalMinor,
-                taxMinor: _taxMinor,
-                totalMinor: _totalMinor,
-                onRemove: _removeItem,
-                onAdd: _addItem,
-                saving: _saving,
-                onProceedToPay: _saving ? null : _proceedToPay,
-                onSendKot: _sendKot,
-                onSaveHold: () => _notRebuiltYet('Hold Orders screen'))),
-      ]),
+    final title = _selectedTable != null
+        ? '${_selectedTable!.label} — New Order'
+        : 'New Order';
+    return StreamBuilder<List<MenuCategory>>(
+      stream: _categoriesStream,
+      builder: (context, catSnapshot) {
+        final categories = catSnapshot.data ?? [];
+        return StreamBuilder<List<MenuItem>>(
+          stream: _itemsStream,
+          builder: (context, itemSnapshot) {
+            final allItems = itemSnapshot.data ?? [];
+            for (final i in allItems) {
+              _knownItems[i.id] = i;
+            }
+
+            final itemsCountPerCategory = <String, int>{};
+            for (final item in allItems) {
+              itemsCountPerCategory[item.categoryId] =
+                  (itemsCountPerCategory[item.categoryId] ?? 0) + 1;
+            }
+
+            final categoriesWithCounts = categories
+                .map((c) => c.copyWith(
+                    itemCount: itemsCountPerCategory[c.id] ?? 0))
+                .toList();
+
+            final effectiveCategoryId = (_categoryId == 'all' ||
+                    categories.any((c) => c.id == _categoryId))
+                ? _categoryId
+                : 'all';
+
+            final selectedCategoryName = effectiveCategoryId == 'all'
+                ? 'All Items'
+                : (categories
+                        .where((c) => c.id == effectiveCategoryId)
+                        .map((c) => c.name)
+                        .firstOrNull ??
+                    'Category');
+
+            final filteredItems = allItems.where((i) {
+              final matchesCategory = effectiveCategoryId == 'all' ||
+                  i.categoryId == effectiveCategoryId;
+              final matchesSearch = _searchQuery.isEmpty ||
+                  i.name.toLowerCase().contains(_searchQuery);
+              return matchesCategory && matchesSearch;
+            }).toList();
+
+            return Scaffold(
+              appBar: AppBar(title: Text(title)),
+              body: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _CategorySidebar(
+                    categories: categoriesWithCounts,
+                    totalItemsCount: allItems.length,
+                    selected: effectiveCategoryId,
+                    onSelect: (id) => setState(() => _categoryId = id),
+                  ),
+                  Expanded(
+                    flex: 3,
+                    child: _ItemGrid(
+                      categoryName: selectedCategoryName,
+                      items: filteredItems,
+                      hasCategories: categories.isNotEmpty,
+                      searchQuery: _searchQuery,
+                      onSearchChanged: (q) =>
+                          setState(() => _searchQuery = q.trim().toLowerCase()),
+                      onTap: _addItem,
+                    ),
+                  ),
+                  SizedBox(
+                    width: 320,
+                    child: _OrderPanel(
+                      table: widget.table,
+                      selectedTable: _selectedTable,
+                      availableTables: _availableTables,
+                      onTableChanged: (t) => setState(() => _selectedTable = t),
+                      orderType: _orderType,
+                      onOrderTypeChanged: widget.table == null
+                          ? (t) => setState(() => _orderType = t)
+                          : null,
+                      cart: _cart,
+                      knownItems: _knownItems,
+                      subtotalMinor: _subtotalMinor,
+                      taxMinor: _taxMinor,
+                      totalMinor: _totalMinor,
+                      onRemove: _removeItem,
+                      onAdd: _addItem,
+                      saving: _saving,
+                      onProceedToPay: _saving ? null : _proceedToPay,
+                      onSendKot: _sendKot,
+                      onSaveHold: _saveAndHold,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }
 
 class _CategorySidebar extends StatelessWidget {
-  const _CategorySidebar({required this.selected, required this.onSelect});
+  const _CategorySidebar({
+    required this.categories,
+    required this.totalItemsCount,
+    required this.selected,
+    required this.onSelect,
+  });
+  final List<MenuCategory> categories;
+  final int totalItemsCount;
   final String selected;
   final ValueChanged<String> onSelect;
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 180,
-      child: ListView(
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          children: [
-            const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Text('CATEGORIES',
+      width: 195,
+      child: categories.isEmpty
+          ? const Center(
+              child: Padding(
+                padding: EdgeInsets.all(16),
+                child: Text(
+                  'No categories in database',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.grey, fontSize: 12),
+                ),
+              ),
+            )
+          : ListView(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              children: [
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Text(
+                    'CATEGORIES',
                     style: TextStyle(
-                        fontSize: 11, color: Colors.grey, letterSpacing: 1))),
-            _CategoryTile(
-                label: 'All Items',
-                selected: selected == 'all',
-                onTap: () => onSelect('all')),
-            for (final c in LocalMenuCatalog.categories)
-              _CategoryTile(
-                  label: c.name,
-                  selected: selected == c.id,
-                  onTap: () => onSelect(c.id)),
-          ]),
+                      fontSize: 11,
+                      color: Colors.grey,
+                      letterSpacing: 1,
+                    ),
+                  ),
+                ),
+                _CategoryTile(
+                  label: 'All Items',
+                  count: totalItemsCount,
+                  selected: selected == 'all',
+                  onTap: () => onSelect('all'),
+                ),
+                for (final c in categories)
+                  _CategoryTile(
+                    label: c.name,
+                    count: c.itemCount,
+                    selected: selected == c.id,
+                    onTap: () => onSelect(c.id),
+                  ),
+              ],
+            ),
     );
   }
 }
 
 class _CategoryTile extends StatelessWidget {
-  const _CategoryTile(
-      {required this.label, required this.selected, required this.onTap});
+  const _CategoryTile({
+    required this.label,
+    required this.count,
+    required this.selected,
+    required this.onTap,
+  });
   final String label;
+  final int count;
   final bool selected;
   final VoidCallback onTap;
 
@@ -226,20 +490,36 @@ class _CategoryTile extends StatelessWidget {
           color: selected ? ViniiColors.greenTint : null,
           border: selected ? Border.all(color: ViniiColors.brandGreen) : null,
           borderRadius: BorderRadius.circular(8)),
-      // ListTile paints its ink/background on the nearest Material
-      // ancestor — without one here, it would paint on whatever
-      // Material is further up the tree, behind this Container's own
-      // background, and log a runtime assertion about it.
       child: Material(
         type: MaterialType.transparency,
         child: ListTile(
           dense: true,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 10),
           leading: Icon(Icons.star_border,
               size: 18, color: selected ? ViniiColors.brandGreen : Colors.grey),
           title: Text(label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
                   fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                   color: selected ? ViniiColors.brandGreen : null)),
+          trailing: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            decoration: BoxDecoration(
+              color: selected
+                  ? ViniiColors.brandGreen.withValues(alpha: 0.2)
+                  : Colors.grey.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Text(
+              '$count',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+                color: selected ? ViniiColors.brandGreen : Colors.grey.shade700,
+              ),
+            ),
+          ),
           onTap: onTap,
         ),
       ),
@@ -248,34 +528,112 @@ class _CategoryTile extends StatelessWidget {
 }
 
 class _ItemGrid extends StatelessWidget {
-  const _ItemGrid({required this.categoryId, required this.onTap});
-  final String categoryId;
+  const _ItemGrid({
+    required this.categoryName,
+    required this.items,
+    required this.hasCategories,
+    required this.searchQuery,
+    required this.onSearchChanged,
+    required this.onTap,
+  });
+  final String categoryName;
+  final List<MenuItem> items;
+  final bool hasCategories;
+  final String searchQuery;
+  final ValueChanged<String> onSearchChanged;
   final void Function(MenuItem) onTap;
 
   @override
   Widget build(BuildContext context) {
-    final items = categoryId == 'all'
-        ? LocalMenuCatalog.items
-        : LocalMenuCatalog.itemsIn(categoryId);
     return Padding(
       padding: const EdgeInsets.all(16),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text('All Items  ·  ${items.length} items',
-            style: Theme.of(context).textTheme.titleMedium),
-        const SizedBox(height: 12),
-        Expanded(
-          child: GridView.builder(
-            gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                maxCrossAxisExtent: 220,
-                mainAxisExtent: 130,
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12),
-            itemCount: items.length,
-            itemBuilder: (context, i) =>
-                _ItemCard(item: items[i], onTap: onTap),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  '$categoryName  ·  ${items.length} items',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+              ),
+              SizedBox(
+                width: 220,
+                height: 36,
+                child: TextField(
+                  decoration: InputDecoration(
+                    hintText: 'Search items...',
+                    hintStyle: const TextStyle(fontSize: 12),
+                    prefixIcon: const Icon(Icons.search, size: 16),
+                    contentPadding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    isDense: true,
+                  ),
+                  onChanged: onSearchChanged,
+                ),
+              ),
+            ],
           ),
-        ),
-      ]),
+          const SizedBox(height: 12),
+          Expanded(
+            child: items.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          searchQuery.isNotEmpty
+                              ? Icons.search_off
+                              : (!hasCategories
+                                  ? Icons.restaurant_menu
+                                  : Icons.fastfood_outlined),
+                          size: 48,
+                          color: Colors.grey.shade400,
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          searchQuery.isNotEmpty
+                              ? 'No items matching "$searchQuery"'
+                              : (!hasCategories
+                                  ? 'No categories or items in database yet'
+                                  : 'No items in this category'),
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.grey,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          searchQuery.isNotEmpty
+                              ? 'Try searching with a different keyword.'
+                              : 'Add categories and items in Menu Management to start taking orders.',
+                          style:
+                              const TextStyle(fontSize: 12, color: Colors.grey),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  )
+                : GridView.builder(
+                    gridDelegate:
+                        const SliverGridDelegateWithMaxCrossAxisExtent(
+                      maxCrossAxisExtent: 220,
+                      mainAxisExtent: 130,
+                      crossAxisSpacing: 12,
+                      mainAxisSpacing: 12,
+                    ),
+                    itemCount: items.length,
+                    itemBuilder: (context, i) =>
+                        _ItemCard(item: items[i], onTap: onTap),
+                  ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -324,7 +682,7 @@ class _ItemCard extends StatelessWidget {
                       style: const TextStyle(fontWeight: FontWeight.w600))),
             ]),
             const SizedBox(height: 2),
-            Text('₹${(item.priceMinor / 100).toStringAsFixed(0)}'),
+            Text('₹${(item.priceMinor / 100).toStringAsFixed(item.priceMinor % 100 == 0 ? 0 : 2)}'),
             const SizedBox(height: 2),
             Row(children: [
               Icon(Icons.circle,
@@ -356,9 +714,13 @@ class _ItemCard extends StatelessWidget {
 class _OrderPanel extends StatelessWidget {
   const _OrderPanel(
       {required this.table,
+      this.selectedTable,
+      this.availableTables = const [],
+      this.onTableChanged,
       required this.orderType,
       required this.onOrderTypeChanged,
       required this.cart,
+      required this.knownItems,
       required this.subtotalMinor,
       required this.taxMinor,
       required this.totalMinor,
@@ -370,9 +732,13 @@ class _OrderPanel extends StatelessWidget {
       required this.onSaveHold});
 
   final RestaurantTable? table;
+  final RestaurantTable? selectedTable;
+  final List<RestaurantTable> availableTables;
+  final ValueChanged<RestaurantTable?>? onTableChanged;
   final OrderType orderType;
   final ValueChanged<OrderType>? onOrderTypeChanged;
   final Map<String, int> cart;
+  final Map<String, MenuItem> knownItems;
   final int subtotalMinor, taxMinor, totalMinor;
   final void Function(MenuItem) onRemove, onAdd;
   final bool saving;
@@ -409,6 +775,36 @@ class _OrderPanel extends StatelessWidget {
             Text(
                 '${table!.label}  ·  ${table!.guestCount ?? table!.seats} Guests',
                 style: const TextStyle(fontWeight: FontWeight.w600)),
+          ] else if (orderType == OrderType.dineIn) ...[
+            const SizedBox(height: 8),
+            if (availableTables.isEmpty)
+              const Text('No tables in database yet',
+                  style: TextStyle(fontSize: 12, color: Colors.orange))
+            else
+              DropdownButtonFormField<RestaurantTable>(
+                value: selectedTable,
+                isDense: true,
+                isExpanded: true,
+                decoration: const InputDecoration(
+                  labelText: 'Select Table',
+                  contentPadding:
+                      EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  border: OutlineInputBorder(),
+                ),
+                hint:
+                    const Text('Choose table', style: TextStyle(fontSize: 13)),
+                items: [
+                  for (final t in availableTables)
+                    DropdownMenuItem(
+                      value: t,
+                      child: Text(
+                        '${t.label} (${t.seats} seats · ${t.status.name})',
+                        style: const TextStyle(fontSize: 13),
+                      ),
+                    ),
+                ],
+                onChanged: onTableChanged,
+              ),
           ],
           const SizedBox(height: 16),
           Expanded(
@@ -419,13 +815,21 @@ class _OrderPanel extends StatelessWidget {
                         style: TextStyle(color: Colors.grey)))
                 : ListView(
                     children: [
-                      for (final entry in cart.entries)
+                      for (final entry in cart.entries) ...[
                         _OrderLineTile(
-                            item: LocalMenuCatalog.items
-                                .firstWhere((i) => i.id == entry.key),
-                            quantity: entry.value,
-                            onAdd: onAdd,
-                            onRemove: onRemove),
+                          item: knownItems[entry.key] ??
+                              MenuItem(
+                                id: entry.key,
+                                categoryId: '',
+                                name: 'Item ${entry.key}',
+                                priceMinor: 0,
+                                isVeg: true,
+                              ),
+                          quantity: entry.value,
+                          onAdd: onAdd,
+                          onRemove: onRemove,
+                        ),
+                      ],
                     ],
                   ),
           ),
@@ -454,7 +858,7 @@ class _OrderPanel extends StatelessWidget {
           const SizedBox(height: 8),
           Center(
               child: TextButton(
-                  onPressed: cart.isEmpty ? null : onSaveHold,
+                  onPressed: saving ? null : onSaveHold,
                   child: const Text('Save & Hold'))),
         ]),
       ),
@@ -508,7 +912,7 @@ class _OrderLineTile extends StatelessWidget {
         SizedBox(
             width: 56,
             child: Text(
-                '₹${(item.priceMinor * quantity / 100).toStringAsFixed(0)}',
+                '₹${(item.priceMinor * quantity / 100).toStringAsFixed(item.priceMinor % 100 == 0 ? 0 : 2)}',
                 textAlign: TextAlign.right)),
       ]),
     );

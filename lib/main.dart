@@ -5,9 +5,12 @@ import 'application/order_service.dart';
 import 'application/payment_service.dart';
 import 'config/app_config.dart';
 import 'data/app_database.dart';
+import 'data/drift_all_orders_store.dart';
 import 'data/drift_kitchen_store.dart';
 import 'data/drift_local_store.dart';
+import 'data/drift_menu_store.dart';
 import 'data/drift_payment_store.dart';
+import 'data/drift_table_store.dart';
 import 'data/local_dine_in_catalog.dart';
 import 'domain/restaurant_table.dart';
 import 'presentation/all_orders_screen.dart';
@@ -67,6 +70,9 @@ class _ProviyaaPosAppState extends State<ProviyaaPosApp> {
   late final _orderService = OrderService(_localStore);
   late final _kitchenService = KitchenService(DriftKitchenStore(_db));
   late final _paymentService = PaymentService(DriftPaymentStore(_db));
+  late final _tableStore = DriftTableStore(_db);
+  late final _allOrdersStore = DriftAllOrdersStore(_db);
+  late final _menuStore = DriftMenuStore(_db);
 
   PosModule _selected = PosModule.dineIn;
 
@@ -117,16 +123,17 @@ class _ProviyaaPosAppState extends State<ProviyaaPosApp> {
 
   Widget _content(BuildContext context) => switch (_selected) {
         PosModule.tables => TablesScreen(
+            tableStore: _tableStore,
             onOpenTable: (t) => _openOrder(context, t),
             onStartOrder: (t) => _openOrder(context, t)),
         PosModule.dineIn => DineInScreen(
             onOpenOrder: (t) => _openOrder(context, _asRestaurantTable(t)),
             onStartOrder: (t) => _openOrder(context, _asRestaurantTable(t))),
-        PosModule.allOrders => const AllOrdersScreen(),
+        PosModule.allOrders => AllOrdersScreen(ordersStore: _allOrdersStore),
         PosModule.takeaway => const TakeawayScreen(),
         PosModule.delivery => const DeliveryScreen(),
         PosModule.online => const OnlineOrdersScreen(),
-        PosModule.menu => const MenuManagementScreen(),
+        PosModule.menu => MenuManagementScreen(menuStore: _menuStore),
         // Selecting POS immediately pushes a route (see _onSelect) and
         // never actually renders this; kept only so the switch is
         // exhaustive over PosModule.
@@ -152,6 +159,9 @@ class _ProviyaaPosAppState extends State<ProviyaaPosApp> {
             orderService: _orderService,
             kitchenService: _kitchenService,
             paymentService: _paymentService,
+            allOrdersStore: _allOrdersStore,
+            tableStore: _tableStore,
+            menuStore: _menuStore,
             locationId: _demoLocationId,
             table: table)));
   }

@@ -3,8 +3,17 @@
 // Phase B (device/config bootstrap) and is not implemented yet.
 
 class MenuCategory {
-  const MenuCategory({required this.id, required this.name});
+  const MenuCategory(
+      {required this.id, required this.name, this.itemCount = 0});
   final String id, name;
+  final int itemCount;
+
+  MenuCategory copyWith({String? id, String? name, int? itemCount}) =>
+      MenuCategory(
+        id: id ?? this.id,
+        name: name ?? this.name,
+        itemCount: itemCount ?? this.itemCount,
+      );
 }
 
 class MenuItem {

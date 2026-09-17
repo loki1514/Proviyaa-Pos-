@@ -113,6 +113,65 @@ class DeviceSessions extends Table {
   Set<Column> get primaryKey => {deviceId};
 }
 
+@DataClassName('RestaurantTableRow')
+class RestaurantTables extends Table {
+  TextColumn get id => text()();
+  TextColumn get label => text()();
+  IntColumn get seats => integer()();
+  TextColumn get zone => text()();
+  TextColumn get status => text()();
+  IntColumn get guestCount => integer().nullable()();
+  IntColumn get elapsedMinutes => integer().nullable()();
+  IntColumn get orderTotalMinor => integer().nullable()();
+  TextColumn get reservedByName => text().nullable()();
+  DateTimeColumn get reservedAt => dateTime().nullable()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+@DataClassName('AllOrderEntity')
+class AllOrdersTable extends Table {
+  TextColumn get orderId => text()();
+  TextColumn get type => text()();
+  TextColumn get source => text()();
+  TextColumn get tableOrCustomer => text()();
+  TextColumn get itemsLabel => text()();
+  IntColumn get amountMinor => integer()();
+  TextColumn get status => text()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column> get primaryKey => {orderId};
+}
+
+@DataClassName('MenuCategoryEntity')
+class MenuCategoriesTable extends Table {
+  TextColumn get id => text()();
+  TextColumn get name => text()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+@DataClassName('MenuItemEntity')
+class MenuItemsTable extends Table {
+  TextColumn get id => text()();
+  TextColumn get categoryId => text()();
+  TextColumn get name => text()();
+  IntColumn get priceMinor => integer()();
+  BoolColumn get isVeg => boolean().withDefault(const Constant(true))();
+  BoolColumn get isBestseller => boolean().withDefault(const Constant(false))();
+  BoolColumn get available => boolean().withDefault(const Constant(true))();
+  TextColumn get unavailableReason => text().nullable()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
 @DriftDatabase(tables: [
   Orders,
   OrderLines,
@@ -120,7 +179,11 @@ class DeviceSessions extends Table {
   KitchenTickets,
   Shifts,
   Payments,
-  DeviceSessions
+  DeviceSessions,
+  RestaurantTables,
+  AllOrdersTable,
+  MenuCategoriesTable,
+  MenuItemsTable,
 ])
 class AppDatabase extends _$AppDatabase {
   /// Kept for tests and any caller that wants to hand in its own
