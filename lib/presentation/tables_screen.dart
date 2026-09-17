@@ -192,7 +192,8 @@ class _TablesScreenState extends State<TablesScreen> {
                               size: 48, color: Colors.grey),
                           const SizedBox(height: 12),
                           const Text('No tables found in this zone',
-                              style: TextStyle(color: Colors.grey, fontSize: 16)),
+                              style:
+                                  TextStyle(color: Colors.grey, fontSize: 16)),
                           const SizedBox(height: 12),
                           FilledButton.icon(
                             icon: const Icon(Icons.add, size: 18),
@@ -207,21 +208,22 @@ class _TablesScreenState extends State<TablesScreen> {
                       ),
                     )
                   : GridView.builder(
-                  gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                      maxCrossAxisExtent: 235,
-                      mainAxisExtent: 182,
-                      crossAxisSpacing: 16,
-                      mainAxisSpacing: 16),
-                  itemCount: visible.length,
-                  itemBuilder: (context, i) => _TableCard(
-                    table: visible[i],
-                    onOpen: widget.onOpenTable,
-                    onStart: widget.onStartOrder,
-                    onEdit: (t) => _openAddEditDialog(context, t),
-                    onDelete: (t) => _confirmDelete(context, t),
-                    onUpdateStatus: _changeStatus,
-                  ),
-                ),
+                      gridDelegate:
+                          const SliverGridDelegateWithMaxCrossAxisExtent(
+                              maxCrossAxisExtent: 235,
+                              mainAxisExtent: 182,
+                              crossAxisSpacing: 16,
+                              mainAxisSpacing: 16),
+                      itemCount: visible.length,
+                      itemBuilder: (context, i) => _TableCard(
+                        table: visible[i],
+                        onOpen: widget.onOpenTable,
+                        onStart: widget.onStartOrder,
+                        onEdit: (t) => _openAddEditDialog(context, t),
+                        onDelete: (t) => _confirmDelete(context, t),
+                        onUpdateStatus: _changeStatus,
+                      ),
+                    ),
         ),
       ]),
     );
@@ -374,8 +376,7 @@ class _TableCard extends StatelessWidget {
                     children: [
                       Icon(Icons.delete, size: 16, color: Colors.red),
                       SizedBox(width: 8),
-                      Text('Delete Table',
-                          style: TextStyle(color: Colors.red)),
+                      Text('Delete Table', style: TextStyle(color: Colors.red)),
                     ],
                   ),
                 ),
@@ -484,8 +485,8 @@ class _AddEditTableDialogState extends State<_AddEditTableDialog> {
     super.initState();
     _labelController =
         TextEditingController(text: widget.existing?.label ?? '');
-    _seatsController = TextEditingController(
-        text: (widget.existing?.seats ?? 4).toString());
+    _seatsController =
+        TextEditingController(text: (widget.existing?.seats ?? 4).toString());
     _zone = widget.existing?.zone ?? TableZone.indoor;
     _status = widget.existing?.status ?? TableStatus.available;
   }
@@ -501,7 +502,8 @@ class _AddEditTableDialogState extends State<_AddEditTableDialog> {
   Widget build(BuildContext context) {
     final isNew = widget.existing == null;
     return AlertDialog(
-      title: Text(isNew ? 'Add New Table' : 'Edit Table ${widget.existing!.label}'),
+      title: Text(
+          isNew ? 'Add New Table' : 'Edit Table ${widget.existing!.label}'),
       content: SizedBox(
         width: 380,
         child: Column(
@@ -528,7 +530,7 @@ class _AddEditTableDialogState extends State<_AddEditTableDialog> {
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<TableZone>(
-              value: _zone,
+              initialValue: _zone,
               decoration: const InputDecoration(
                 labelText: 'Zone / Area',
                 border: OutlineInputBorder(),
@@ -548,7 +550,7 @@ class _AddEditTableDialogState extends State<_AddEditTableDialog> {
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<TableStatus>(
-              value: _status,
+              initialValue: _status,
               decoration: const InputDecoration(
                 labelText: 'Initial Status',
                 border: OutlineInputBorder(),
@@ -586,6 +588,7 @@ class _AddEditTableDialogState extends State<_AddEditTableDialog> {
                   final label = _labelController.text.trim();
                   if (label.isEmpty) return;
                   final seats = int.tryParse(_seatsController.text.trim()) ?? 4;
+                  final navigator = Navigator.of(context);
                   setState(() => _saving = true);
 
                   final table = RestaurantTable(
@@ -602,7 +605,7 @@ class _AddEditTableDialogState extends State<_AddEditTableDialog> {
                   );
 
                   await widget.onSave(table);
-                  if (mounted) Navigator.pop(context);
+                  if (mounted) navigator.pop();
                 },
           child: _saving
               ? const SizedBox(

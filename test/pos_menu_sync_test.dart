@@ -59,7 +59,8 @@ void main() {
       expect(find.text('No categories in database'), findsOneWidget);
 
       // Verify item grid empty state
-      expect(find.text('No categories or items in database yet'), findsOneWidget);
+      expect(
+          find.text('No categories or items in database yet'), findsOneWidget);
       expect(
           find.text(
               'Add categories and items in Menu Management to start taking orders.'),
@@ -82,8 +83,8 @@ void main() {
       // Seed categories in SQLite
       await menuStore.insertCategory(
           const MenuCategory(id: 'beverages', name: 'Beverages'));
-      await menuStore.insertCategory(
-          const MenuCategory(id: 'desserts', name: 'Desserts'));
+      await menuStore
+          .insertCategory(const MenuCategory(id: 'desserts', name: 'Desserts'));
 
       // Seed items in SQLite
       await menuStore.insertItem(const MenuItem(
@@ -166,8 +167,8 @@ void main() {
       await tester.binding.setSurfaceSize(const Size(1280, 800));
       addTearDown(() => tester.binding.setSurfaceSize(null));
 
-      await menuStore.insertCategory(
-          const MenuCategory(id: 'specials', name: 'Specials'));
+      await menuStore
+          .insertCategory(const MenuCategory(id: 'specials', name: 'Specials'));
       await menuStore.insertItem(const MenuItem(
         id: 'special-thali',
         categoryId: 'specials',
@@ -200,8 +201,8 @@ void main() {
       await tester.pumpAndSettle();
 
       // Cart should remain empty
-      expect(
-          find.text('No items yet — tap a menu item to add it.'), findsOneWidget);
+      expect(find.text('No items yet — tap a menu item to add it.'),
+          findsOneWidget);
 
       await tester.pumpWidget(const SizedBox());
       await tester.pumpAndSettle();
@@ -213,8 +214,8 @@ void main() {
       await tester.binding.setSurfaceSize(const Size(1280, 800));
       addTearDown(() => tester.binding.setSurfaceSize(null));
 
-      await menuStore.insertCategory(
-          const MenuCategory(id: 'snacks', name: 'Snacks'));
+      await menuStore
+          .insertCategory(const MenuCategory(id: 'snacks', name: 'Snacks'));
       await menuStore.insertItem(const MenuItem(
         id: 'samosa',
         categoryId: 'snacks',
@@ -269,8 +270,8 @@ void main() {
       await tester.binding.setSurfaceSize(const Size(1280, 800));
       addTearDown(() => tester.binding.setSurfaceSize(null));
 
-      await menuStore.insertCategory(
-          const MenuCategory(id: 'rice', name: 'Rice'));
+      await menuStore
+          .insertCategory(const MenuCategory(id: 'rice', name: 'Rice'));
       await menuStore.insertItem(const MenuItem(
         id: 'jeera-rice',
         categoryId: 'rice',

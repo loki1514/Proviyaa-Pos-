@@ -40,8 +40,8 @@ class _MenuManagementScreenState extends State<MenuManagementScreen> {
     _itemsStream = widget.menuStore?.watchItems();
   }
 
-  void _openAddEditCategoryDialog(
-      BuildContext context, MenuCategory? existing, List<MenuCategory> allCategories) {
+  void _openAddEditCategoryDialog(BuildContext context, MenuCategory? existing,
+      List<MenuCategory> allCategories) {
     showDialog(
       context: context,
       builder: (ctx) => _AddEditCategoryDialog(
@@ -97,7 +97,8 @@ class _MenuManagementScreenState extends State<MenuManagementScreen> {
     if (categories.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Warning: Please create at least one category before adding items.'),
+          content: Text(
+              'Warning: Please create at least one category before adding items.'),
           backgroundColor: Colors.orange,
           behavior: SnackBarBehavior.floating,
         ),
@@ -263,7 +264,8 @@ class _MenuManagementScreenState extends State<MenuManagementScreen> {
           padding: const EdgeInsets.symmetric(vertical: 16),
           decoration: const BoxDecoration(
               color: ViniiColors.lightBg,
-              border: Border(right: BorderSide(color: ViniiColors.lightBorder))),
+              border:
+                  Border(right: BorderSide(color: ViniiColors.lightBorder))),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -564,7 +566,8 @@ class _MenuItemCard extends StatelessWidget {
         color: ViniiColors.lightBg,
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
-          color: item.available ? ViniiColors.lightBorder : ViniiColors.redSolid,
+          color:
+              item.available ? ViniiColors.lightBorder : ViniiColors.redSolid,
           width: item.available ? 1 : 1.4,
         ),
       ),
@@ -579,7 +582,8 @@ class _MenuItemCard extends StatelessWidget {
                 const Positioned(
                   top: 8,
                   left: 8,
-                  child: _Tag(text: 'Best Seller', color: ViniiColors.amberSolid),
+                  child:
+                      _Tag(text: 'Best Seller', color: ViniiColors.amberSolid),
                 ),
               Positioned(
                 top: 4,
@@ -587,7 +591,8 @@ class _MenuItemCard extends StatelessWidget {
                 child: PopupMenuButton<String>(
                   padding: EdgeInsets.zero,
                   iconSize: 18,
-                  icon: const Icon(Icons.more_vert, size: 18, color: Colors.black54),
+                  icon: const Icon(Icons.more_vert,
+                      size: 18, color: Colors.black54),
                   onSelected: (val) {
                     if (val == 'edit') onEdit();
                     if (val == 'toggle') onToggleAvailability();
@@ -626,7 +631,8 @@ class _MenuItemCard extends StatelessWidget {
                       value: 'delete',
                       child: Row(
                         children: [
-                          Icon(Icons.delete_outline, size: 16, color: Colors.red),
+                          Icon(Icons.delete_outline,
+                              size: 16, color: Colors.red),
                           SizedBox(width: 8),
                           Text('Delete Item',
                               style: TextStyle(color: Colors.red)),
@@ -643,7 +649,8 @@ class _MenuItemCard extends StatelessWidget {
         // Item info
         Padding(
           padding: const EdgeInsets.all(10),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(
               item.name,
               maxLines: 1,
@@ -761,7 +768,8 @@ class _AddEditCategoryDialogState extends State<_AddEditCategoryDialog> {
     // Edge Case 1: Empty name
     if (name.isEmpty) {
       setState(() {
-        _warningMessage = 'Warning: Category name is required and cannot be empty.';
+        _warningMessage =
+            'Warning: Category name is required and cannot be empty.';
       });
       return;
     }
@@ -787,7 +795,8 @@ class _AddEditCategoryDialogState extends State<_AddEditCategoryDialog> {
             .toLowerCase()
             .replaceAll(RegExp(r'[^a-z0-9]+'), '-')
             .replaceAll(RegExp(r'^-|-$'), '');
-    final finalId = id.isEmpty ? 'cat_${DateTime.now().millisecondsSinceEpoch}' : id;
+    final finalId =
+        id.isEmpty ? 'cat_${DateTime.now().millisecondsSinceEpoch}' : id;
 
     final category = MenuCategory(
       id: finalId,
@@ -911,11 +920,11 @@ class _AddEditItemDialogState extends State<_AddEditItemDialog> {
     _nameController = TextEditingController(text: widget.existing?.name ?? '');
     _priceController = TextEditingController(
         text: widget.existing != null
-            ? (widget.existing!.priceMinor / 100).toStringAsFixed(
-                widget.existing!.priceMinor % 100 == 0 ? 0 : 2)
+            ? (widget.existing!.priceMinor / 100)
+                .toStringAsFixed(widget.existing!.priceMinor % 100 == 0 ? 0 : 2)
             : '');
-    _reasonController = TextEditingController(
-        text: widget.existing?.unavailableReason ?? '');
+    _reasonController =
+        TextEditingController(text: widget.existing?.unavailableReason ?? '');
     _categoryId = widget.existing?.categoryId ?? widget.defaultCategoryId;
     _isVeg = widget.existing?.isVeg ?? true;
     _isBestseller = widget.existing?.isBestseller ?? false;
@@ -982,8 +991,8 @@ class _AddEditItemDialogState extends State<_AddEditItemDialog> {
     });
 
     final priceMinor = (price * 100).round();
-    final id = widget.existing?.id ??
-        'item_${DateTime.now().millisecondsSinceEpoch}';
+    final id =
+        widget.existing?.id ?? 'item_${DateTime.now().millisecondsSinceEpoch}';
 
     final item = MenuItem(
       id: id,
@@ -993,10 +1002,9 @@ class _AddEditItemDialogState extends State<_AddEditItemDialog> {
       isVeg: _isVeg,
       isBestseller: _isBestseller,
       available: _available,
-      unavailableReason:
-          !_available && _reasonController.text.trim().isNotEmpty
-              ? _reasonController.text.trim()
-              : null,
+      unavailableReason: !_available && _reasonController.text.trim().isNotEmpty
+          ? _reasonController.text.trim()
+          : null,
     );
 
     await widget.onSave(item);
@@ -1056,7 +1064,7 @@ class _AddEditItemDialogState extends State<_AddEditItemDialog> {
 
               // Category Selector
               DropdownButtonFormField<String>(
-                value: widget.categories.any((c) => c.id == _categoryId)
+                initialValue: widget.categories.any((c) => c.id == _categoryId)
                     ? _categoryId
                     : widget.categories.first.id,
                 decoration: const InputDecoration(

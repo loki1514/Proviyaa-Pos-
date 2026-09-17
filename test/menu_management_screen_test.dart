@@ -62,8 +62,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Submit empty category name
-      final createCatBtn =
-          find.widgetWithText(FilledButton, 'Create Category');
+      final createCatBtn = find.widgetWithText(FilledButton, 'Create Category');
       await tester.tap(createCatBtn);
       await tester.pumpAndSettle();
 
@@ -87,14 +86,12 @@ void main() {
 
       final dupNameField = find.widgetWithText(TextField, 'Category Name *');
       await tester.enterText(dupNameField, 'starters');
-      final dupCreateBtn =
-          find.widgetWithText(FilledButton, 'Create Category');
+      final dupCreateBtn = find.widgetWithText(FilledButton, 'Create Category');
       await tester.tap(dupCreateBtn);
       await tester.pumpAndSettle();
 
       // Duplicate warning message
-      expect(
-          find.text('Warning: A category named "starters" already exists.'),
+      expect(find.text('Warning: A category named "starters" already exists.'),
           findsOneWidget);
 
       await tester.pumpWidget(const SizedBox());
@@ -148,8 +145,7 @@ void main() {
       // 1. Submit empty item name
       await tester.tap(createItemBtn);
       await tester.pumpAndSettle();
-      expect(
-          find.text('Warning: Item name is required and cannot be empty.'),
+      expect(find.text('Warning: Item name is required and cannot be empty.'),
           findsOneWidget);
 
       // Enter name
@@ -175,8 +171,7 @@ void main() {
       await tester.enterText(priceField, '0');
       await tester.tap(createItemBtn);
       await tester.pumpAndSettle();
-      expect(
-          find.text('Warning: Price must be greater than zero.'),
+      expect(find.text('Warning: Price must be greater than zero.'),
           findsOneWidget);
 
       // 5. Enter valid price 150.00 and save

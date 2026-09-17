@@ -388,8 +388,7 @@ class _OrderRow extends StatelessWidget {
                   ),
               ],
               child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
                     color: statusColor.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(20)),
@@ -402,8 +401,7 @@ class _OrderRow extends StatelessWidget {
                             fontSize: 12,
                             fontWeight: FontWeight.w600)),
                     const SizedBox(width: 4),
-                    Icon(Icons.arrow_drop_down,
-                        size: 14, color: statusColor),
+                    Icon(Icons.arrow_drop_down, size: 14, color: statusColor),
                   ],
                 ),
               ),
@@ -486,8 +484,8 @@ class _AddEditOrderDialogState extends State<_AddEditOrderDialog> {
         '#${(DateTime.now().millisecondsSinceEpoch % 9000 + 1000)}';
     _orderIdController =
         TextEditingController(text: widget.existing?.orderId ?? defaultId);
-    _customerController = TextEditingController(
-        text: widget.existing?.tableOrCustomer ?? '');
+    _customerController =
+        TextEditingController(text: widget.existing?.tableOrCustomer ?? '');
     _itemsController =
         TextEditingController(text: widget.existing?.itemsLabel ?? '1 item');
     final initialAmount = widget.existing != null
@@ -512,7 +510,8 @@ class _AddEditOrderDialogState extends State<_AddEditOrderDialog> {
   Widget build(BuildContext context) {
     final isNew = widget.existing == null;
     return AlertDialog(
-      title: Text(isNew ? 'New Order' : 'Edit Order ${widget.existing!.orderId}'),
+      title:
+          Text(isNew ? 'New Order' : 'Edit Order ${widget.existing!.orderId}'),
       content: SizedBox(
         width: 400,
         child: SingleChildScrollView(
@@ -532,7 +531,7 @@ class _AddEditOrderDialogState extends State<_AddEditOrderDialog> {
                 children: [
                   Expanded(
                     child: DropdownButtonFormField<String>(
-                      value: _type,
+                      initialValue: _type,
                       decoration: const InputDecoration(
                         labelText: 'Type',
                         border: OutlineInputBorder(),
@@ -553,7 +552,7 @@ class _AddEditOrderDialogState extends State<_AddEditOrderDialog> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: DropdownButtonFormField<String>(
-                      value: _source,
+                      initialValue: _source,
                       decoration: const InputDecoration(
                         labelText: 'Source',
                         border: OutlineInputBorder(),
@@ -566,8 +565,7 @@ class _AddEditOrderDialogState extends State<_AddEditOrderDialog> {
                         DropdownMenuItem(
                             value: 'Swiggy', child: Text('Swiggy')),
                         DropdownMenuItem(
-                            value: 'Direct Phone',
-                            child: Text('Direct Phone')),
+                            value: 'Direct Phone', child: Text('Direct Phone')),
                       ],
                       onChanged: (v) {
                         if (v != null) setState(() => _source = v);
@@ -602,8 +600,8 @@ class _AddEditOrderDialogState extends State<_AddEditOrderDialog> {
                   Expanded(
                     child: TextField(
                       controller: _amountController,
-                      keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true),
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
                       decoration: const InputDecoration(
                         labelText: 'Amount (₹)',
                         hintText: '250.00',
@@ -615,7 +613,7 @@ class _AddEditOrderDialogState extends State<_AddEditOrderDialog> {
               ),
               const SizedBox(height: 14),
               DropdownButtonFormField<String>(
-                value: _status,
+                initialValue: _status,
                 decoration: const InputDecoration(
                   labelText: 'Order Status',
                   border: OutlineInputBorder(),
@@ -664,6 +662,7 @@ class _AddEditOrderDialogState extends State<_AddEditOrderDialog> {
                       double.tryParse(_amountController.text.trim()) ?? 0.0;
                   final amountMinor = (amountNum * 100).round();
 
+                  final navigator = Navigator.of(context);
                   setState(() => _saving = true);
 
                   final order = AllOrdersRow(
@@ -678,7 +677,7 @@ class _AddEditOrderDialogState extends State<_AddEditOrderDialog> {
                   );
 
                   await widget.onSave(order);
-                  if (mounted) Navigator.pop(context);
+                  if (mounted) navigator.pop();
                 },
           child: _saving
               ? const SizedBox(

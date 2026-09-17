@@ -1,4 +1,4 @@
-﻿import 'package:drift/native.dart';
+import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:proviyaa_pos/data/app_database.dart';
 import 'package:proviyaa_pos/data/drift_all_orders_store.dart';

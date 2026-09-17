@@ -328,8 +328,8 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
             }
 
             final categoriesWithCounts = categories
-                .map((c) => c.copyWith(
-                    itemCount: itemsCountPerCategory[c.id] ?? 0))
+                .map((c) =>
+                    c.copyWith(itemCount: itemsCountPerCategory[c.id] ?? 0))
                 .toList();
 
             final effectiveCategoryId = (_categoryId == 'all' ||
@@ -682,7 +682,8 @@ class _ItemCard extends StatelessWidget {
                       style: const TextStyle(fontWeight: FontWeight.w600))),
             ]),
             const SizedBox(height: 2),
-            Text('₹${(item.priceMinor / 100).toStringAsFixed(item.priceMinor % 100 == 0 ? 0 : 2)}'),
+            Text(
+                '₹${(item.priceMinor / 100).toStringAsFixed(item.priceMinor % 100 == 0 ? 0 : 2)}'),
             const SizedBox(height: 2),
             Row(children: [
               Icon(Icons.circle,
@@ -782,7 +783,7 @@ class _OrderPanel extends StatelessWidget {
                   style: TextStyle(fontSize: 12, color: Colors.orange))
             else
               DropdownButtonFormField<RestaurantTable>(
-                value: selectedTable,
+                initialValue: selectedTable,
                 isDense: true,
                 isExpanded: true,
                 decoration: const InputDecoration(

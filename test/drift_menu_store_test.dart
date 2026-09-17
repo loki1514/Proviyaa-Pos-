@@ -1,4 +1,4 @@
-﻿import 'package:drift/native.dart';
+import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:proviyaa_pos/data/app_database.dart';
 import 'package:proviyaa_pos/data/drift_menu_store.dart';
@@ -24,18 +24,25 @@ void main() {
     });
 
     test('insertCategory and getAllCategories', () async {
-      await store.insertCategory(const MenuCategory(id: 'starters', name: 'Starters'));
-      await store.insertCategory(const MenuCategory(id: 'beverages', name: 'Beverages'));
+      await store
+          .insertCategory(const MenuCategory(id: 'starters', name: 'Starters'));
+      await store.insertCategory(
+          const MenuCategory(id: 'beverages', name: 'Beverages'));
 
       final categories = await store.getAllCategories();
       expect(categories.length, 2);
-      expect(categories.any((c) => c.id == 'starters' && c.name == 'Starters'), isTrue);
-      expect(categories.any((c) => c.id == 'beverages' && c.name == 'Beverages'), isTrue);
+      expect(categories.any((c) => c.id == 'starters' && c.name == 'Starters'),
+          isTrue);
+      expect(
+          categories.any((c) => c.id == 'beverages' && c.name == 'Beverages'),
+          isTrue);
     });
 
     test('updateCategory changes name', () async {
-      await store.insertCategory(const MenuCategory(id: 'cat-1', name: 'Old Name'));
-      await store.updateCategory(const MenuCategory(id: 'cat-1', name: 'New Name'));
+      await store
+          .insertCategory(const MenuCategory(id: 'cat-1', name: 'Old Name'));
+      await store
+          .updateCategory(const MenuCategory(id: 'cat-1', name: 'New Name'));
 
       final categories = await store.getAllCategories();
       expect(categories.length, 1);
@@ -43,8 +50,10 @@ void main() {
     });
 
     test('insertItem and getAllItems with category filter', () async {
-      await store.insertCategory(const MenuCategory(id: 'starters', name: 'Starters'));
-      await store.insertCategory(const MenuCategory(id: 'beverages', name: 'Beverages'));
+      await store
+          .insertCategory(const MenuCategory(id: 'starters', name: 'Starters'));
+      await store.insertCategory(
+          const MenuCategory(id: 'beverages', name: 'Beverages'));
 
       await store.insertItem(const MenuItem(
         id: 'paneer-tikka',
@@ -77,14 +86,17 @@ void main() {
 
       // Check item count on categories
       final categoriesWithCounts = await store.getAllCategories();
-      final starters = categoriesWithCounts.firstWhere((c) => c.id == 'starters');
-      final beverages = categoriesWithCounts.firstWhere((c) => c.id == 'beverages');
+      final starters =
+          categoriesWithCounts.firstWhere((c) => c.id == 'starters');
+      final beverages =
+          categoriesWithCounts.firstWhere((c) => c.id == 'beverages');
       expect(starters.itemCount, 1);
       expect(beverages.itemCount, 1);
     });
 
     test('updateItem modifies attributes', () async {
-      await store.insertCategory(const MenuCategory(id: 'starters', name: 'Starters'));
+      await store
+          .insertCategory(const MenuCategory(id: 'starters', name: 'Starters'));
       await store.insertItem(const MenuItem(
         id: 'item-1',
         categoryId: 'starters',
@@ -150,7 +162,8 @@ void main() {
       expect((await store.getAllItems()).length, 0);
     });
 
-    test('deleteCategory cascades and deletes items belonging to category', () async {
+    test('deleteCategory cascades and deletes items belonging to category',
+        () async {
       await store.insertCategory(const MenuCategory(id: 'c1', name: 'Cat 1'));
       await store.insertCategory(const MenuCategory(id: 'c2', name: 'Cat 2'));
       await store.insertItem(const MenuItem(

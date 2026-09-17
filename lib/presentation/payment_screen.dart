@@ -112,9 +112,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
         final itemsCount =
             widget.order.lines.fold<int>(0, (sum, l) => sum + l.quantity);
         final itemsDesc = itemsCount == 1 ? '1 item' : '$itemsCount items';
-        final typeLabel = widget.order.orderType == OrderType.dineIn
-            ? 'Dine In'
-            : 'Takeaway';
+        final typeLabel =
+            widget.order.orderType == OrderType.dineIn ? 'Dine In' : 'Takeaway';
         final tableOrCust = widget.order.tableLabel != null &&
                 widget.order.tableLabel!.isNotEmpty
             ? 'Table ${widget.order.tableLabel}'

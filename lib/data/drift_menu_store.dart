@@ -27,9 +27,8 @@ class DriftMenuStore {
     return (db.select(db.menuCategoriesTable)
           ..orderBy([(t) => OrderingTerm.asc(t.name)]))
         .watch()
-        .map((rows) => rows
-            .map((r) => MenuCategory(id: r.id, name: r.name))
-            .toList());
+        .map((rows) =>
+            rows.map((r) => MenuCategory(id: r.id, name: r.name)).toList());
   }
 
   /// Fetch all categories once with computed item counts.
@@ -141,7 +140,8 @@ class DriftMenuStore {
 
   /// DELETE: Remove a menu item from SQLite.
   Future<void> deleteItem(String itemId) async {
-    await (db.delete(db.menuItemsTable)..where((t) => t.id.equals(itemId))).go();
+    await (db.delete(db.menuItemsTable)..where((t) => t.id.equals(itemId)))
+        .go();
   }
 
   /// Fast toggle of availability status.
