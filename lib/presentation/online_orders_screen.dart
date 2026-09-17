@@ -15,7 +15,7 @@ const _colItems = 220.0;
 const _colAmount = 70.0;
 const _colStatus = 110.0;
 const _colTime = 70.0;
-const _colActions = 160.0;
+const _colActions = 180.0;
 const _tableWidth = _colBadge +
     12 +
     _colOrder +
@@ -216,25 +216,45 @@ class _OnlineOrderRow extends StatelessWidget {
                     fontSize: 12, color: ViniiColors.textMutedLight))),
         SizedBox(
           width: _colActions,
-          child: Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-            if (_isDestructive)
-              TextButton(
-                  onPressed: null,
-                  child: const Text('Reject',
-                      style: TextStyle(color: ViniiColors.redSolid))),
-            const SizedBox(width: 4),
-            FilledButton(
-                onPressed: null,
-                style: FilledButton.styleFrom(
-                    backgroundColor: _isDestructive
-                        ? ViniiColors.brandGreen
-                        : ViniiColors.grayTint,
-                    foregroundColor: _isDestructive
-                        ? Colors.black
-                        : ViniiColors.textPrimaryLight),
-                child: Text(row.actionLabel,
-                    style: const TextStyle(fontWeight: FontWeight.w600))),
-          ]),
+          child: Align(
+            alignment: Alignment.centerRight,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  if (_isDestructive)
+                    TextButton(
+                      onPressed: null,
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        visualDensity: VisualDensity.compact,
+                      ),
+                      child: const Text('Reject',
+                          style: TextStyle(color: ViniiColors.redSolid)),
+                    ),
+                  if (_isDestructive) const SizedBox(width: 4),
+                  FilledButton(
+                    onPressed: null,
+                    style: FilledButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      visualDensity: VisualDensity.compact,
+                      backgroundColor: _isDestructive
+                          ? ViniiColors.brandGreen
+                          : ViniiColors.grayTint,
+                      foregroundColor: _isDestructive
+                          ? Colors.black
+                          : ViniiColors.textPrimaryLight,
+                    ),
+                    child: Text(row.actionLabel,
+                        style: const TextStyle(
+                            fontWeight: FontWeight.w600, fontSize: 12)),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ),
       ]));
 }
