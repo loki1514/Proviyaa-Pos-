@@ -356,10 +356,13 @@ class _OnlineOrdersScreenState extends State<OnlineOrdersScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text(
-                            'Select Items (Multi-Select Menu):',
-                            style: TextStyle(
-                                fontWeight: FontWeight.w600, fontSize: 13),
+                          const Flexible(
+                            child: Text(
+                              'Select Items (Multi-Select Menu):',
+                              style: TextStyle(
+                                  fontWeight: FontWeight.w600, fontSize: 13),
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
                           if (selectedQuantities.isNotEmpty)
                             Container(
@@ -635,10 +638,13 @@ class _OnlineOrdersScreenState extends State<OnlineOrdersScreen> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                const Text('Items Subtotal:',
-                                    style: TextStyle(
-                                        fontSize: 12.5,
-                                        color: ViniiColors.textMutedLight)),
+                                const Flexible(
+                                  child: Text('Items Subtotal:',
+                                      style: TextStyle(
+                                          fontSize: 12.5,
+                                          color: ViniiColors.textMutedLight),
+                                      overflow: TextOverflow.ellipsis),
+                                ),
                                 Text(
                                     '₹${(subtotalMinor / 100).toStringAsFixed(2)}',
                                     style: const TextStyle(
@@ -650,10 +656,13 @@ class _OnlineOrdersScreenState extends State<OnlineOrdersScreen> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                const Text('GST (5% POS Rules):',
-                                    style: TextStyle(
-                                        fontSize: 12.5,
-                                        color: ViniiColors.textMutedLight)),
+                                const Flexible(
+                                  child: Text('GST (5% POS Rules):',
+                                      style: TextStyle(
+                                          fontSize: 12.5,
+                                          color: ViniiColors.textMutedLight),
+                                      overflow: TextOverflow.ellipsis),
+                                ),
                                 Text('₹${(gstMinor / 100).toStringAsFixed(2)}',
                                     style: const TextStyle(
                                         fontSize: 13,
@@ -665,10 +674,13 @@ class _OnlineOrdersScreenState extends State<OnlineOrdersScreen> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                const Text('Total Amount (Auto):',
-                                    style: TextStyle(
-                                        fontSize: 13.5,
-                                        fontWeight: FontWeight.bold)),
+                                const Flexible(
+                                  child: Text('Total Amount (Auto):',
+                                      style: TextStyle(
+                                          fontSize: 13.5,
+                                          fontWeight: FontWeight.bold),
+                                      overflow: TextOverflow.ellipsis),
+                                ),
                                 Text(
                                   '₹${(totalMinor / 100).toStringAsFixed(2)}',
                                   style: const TextStyle(

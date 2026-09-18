@@ -241,12 +241,12 @@ void main() {
       await tester.pumpAndSettle();
 
       // 6. Verify table returns to empty state
-      // Switch back to 'All' tab to check all orders
+      // Switch back to 'All' status tab to check all orders
       final allTab = find.byWidgetPredicate(
         (widget) =>
             widget is ChoiceChip &&
             widget.label is Text &&
-            ((widget.label as Text).data ?? '').startsWith('All'),
+            RegExp(r'^All\s+\d+$').hasMatch((widget.label as Text).data ?? ''),
       );
       await tester.tap(allTab);
       await tester.pumpAndSettle();
