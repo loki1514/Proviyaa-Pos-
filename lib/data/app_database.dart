@@ -172,6 +172,15 @@ class MenuItemsTable extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+@DataClassName('AppMetadataRow')
+class AppMetadata extends Table {
+  TextColumn get key => text()();
+  TextColumn get value => text()();
+
+  @override
+  Set<Column> get primaryKey => {key};
+}
+
 @DriftDatabase(tables: [
   Orders,
   OrderLines,
@@ -184,24 +193,13 @@ class MenuItemsTable extends Table {
   AllOrdersTable,
   MenuCategoriesTable,
   MenuItemsTable,
+  AppMetadata,
 ])
 class AppDatabase extends _$AppDatabase {
   /// Kept for tests and any caller that wants to hand in its own
   /// [QueryExecutor] (e.g. an in-memory database).
   AppDatabase(super.executor);
 
-  /// The real on-device database: auto-creates `proviyaa_pos.sqlite` under
-  /// the platform's application-documents directory on first launch, via
-  /// package:drift_flutter (native on Windows/macOS/Linux/Android/iOS).
-  ///
-  /// The `web:` option is required, not optional, for a web build —
-  /// drift_flutter throws ArgumentError at runtime without it (see
-  /// drift_flutter's own web.dart) — but is simply ignored on every
-  /// native platform, so one call serves both without a conditional
-  /// import. `sqlite3.wasm` and `drift_worker.js` are real files
-  /// checked into web/ (a released sqlite3.dart build matching the
-  /// pinned `sqlite3` package version, and drift's own prebuilt
-  /// worker), not placeholders.
   AppDatabase.defaults()
       : super(driftDatabase(
             name: 'proviyaa_pos',
@@ -214,14 +212,31 @@ class AppDatabase extends _$AppDatabase {
   // data — local orders and pending_upload_intents rows must survive
   // every upgrade; see D10 in docs/DECISIONS-AND-QUESTIONS.txt.
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
-        onCreate: (m) => m.createAll(),
-        // No upgrade steps yet — this is the first shipped schema. When
-        // v2 lands, add an explicit `if (from < 2) { ... }` step here
-        // that alters/adds rather than recreates, so existing local
-        // orders and pending upload intents are preserved.
+        onCreate: (m) async {
+          await m.createAll();
+        },
+        onUpgrade: (m, from, to) async {
+          if (from < 2) {
+            await m.createTable(restaurantTables);
+            await m.createTable(allOrdersTable);
+            await m.createTable(menuCategoriesTable);
+            await m.createTable(menuItemsTable);
+            await m.createTable(appMetadata);
+          }
+        },
+        beforeOpen: (details) async {
+          final m = createMigrator();
+          for (final table in allTables) {
+            try {
+              await m.createTable(table);
+            } catch (_) {
+              // Table already exists, ignore
+            }
+          }
+        },
       );
 }

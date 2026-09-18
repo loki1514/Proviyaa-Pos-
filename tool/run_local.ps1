@@ -1,4 +1,4 @@
-﻿# Proviyaa POS Windows Launcher
+# Proviyaa POS Windows Launcher
 $ErrorActionPreference = 'Stop'
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $ProjectRoot = (Resolve-Path "$ScriptDir\..").Path
@@ -31,10 +31,29 @@ Get-Content $EnvFile | ForEach-Object {
 
 Push-Location $ProjectRoot
 try {
-    $targetArgs = $args
-    if ($targetArgs.Length -eq 0) {
-        $targetArgs = @('-d', 'chrome')
+    $targetArgs = @($args)
+    $isWindowsTarget = $targetArgs -contains 'windows'
+
+    if (-not $isWindowsTarget) {
+        $chromeProfile = Join-Path $ProjectRoot ".chrome_dev_data"
+        if (-not (Test-Path $chromeProfile)) {
+            New-Item -ItemType Directory -Path $chromeProfile -Force | Out-Null
+        }
+        if ($targetArgs.Length -eq 0) {
+            $targetArgs = @('-d', 'chrome', '--web-port=7988', "--web-browser-flag=--user-data-dir=$chromeProfile")
+        } else {
+            if (-not ($targetArgs -contains '-d')) {
+                $targetArgs = @('-d', 'chrome') + $targetArgs
+            }
+            if (-not ($targetArgs -join ' ' -match '--web-port')) {
+                $targetArgs += '--web-port=7988'
+            }
+            if (-not ($targetArgs -join ' ' -match '--user-data-dir')) {
+                $targetArgs += "--web-browser-flag=--user-data-dir=$chromeProfile"
+            }
+        }
     }
+
     $allArgs = @('run') + $DartDefines + $targetArgs
     Write-Host "Running: flutter $($allArgs -join ' ')" -ForegroundColor Cyan
     & flutter @allArgs

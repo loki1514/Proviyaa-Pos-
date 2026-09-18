@@ -7,14 +7,20 @@
 
 import 'package:flutter/material.dart';
 
+import '../data/drift_table_store.dart';
 import '../data/local_dine_in_catalog.dart';
 import '../domain/dine_in_status.dart';
+import '../domain/restaurant_table.dart';
 import 'vinii_theme.dart';
 
 class DineInScreen extends StatefulWidget {
   const DineInScreen(
-      {super.key, required this.onOpenOrder, required this.onStartOrder});
+      {super.key,
+      this.tableStore,
+      required this.onOpenOrder,
+      required this.onStartOrder});
 
+  final DriftTableStore? tableStore;
   final void Function(DineInTable table) onOpenOrder;
   final void Function(DineInTable table) onStartOrder;
 
@@ -26,63 +32,150 @@ enum _BoardView { tableView, orderList }
 
 class _DineInScreenState extends State<DineInScreen> {
   _BoardView _view = _BoardView.tableView;
+  Stream<List<RestaurantTable>>? _tablesStream;
 
   @override
-  Widget build(BuildContext context) => Container(
-      color: ViniiColors.lightPageBg,
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Expanded(
-              child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('Dine In Orders',
-                        style: TextStyle(
-                            fontSize: 22, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 10),
-                    Wrap(spacing: 10, runSpacing: 8, children: const [
-                      _SummaryChip(
-                          label: 'Active 12', color: ViniiColors.graySolid),
-                      _SummaryChip(
-                          label: 'Waiting KOT 3',
-                          color: ViniiColors.amberSolid),
-                      _SummaryChip(
-                          label: 'Preparing 4', color: ViniiColors.amberSolid),
-                      _SummaryChip(
-                          label: 'Ready 2', color: ViniiColors.greenSolid),
-                      _SummaryChip(
-                          label: 'Payment Pending 3',
-                          color: ViniiColors.purpleSolid),
+  void initState() {
+    super.initState();
+    _initStream();
+  }
+
+  @override
+  void didUpdateWidget(covariant DineInScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.tableStore != widget.tableStore) {
+      _initStream();
+    }
+  }
+
+  void _initStream() {
+    _tablesStream = widget.tableStore?.watchTables();
+  }
+
+  DineInTable _toDineInTable(RestaurantTable t) {
+    final DineInTableStatus status = switch (t.status) {
+      TableStatus.available => DineInTableStatus.available,
+      TableStatus.reserved => DineInTableStatus.ready,
+      TableStatus.cleaning => DineInTableStatus.available,
+      TableStatus.occupied =>
+        (t.orderTotalMinor != null && t.orderTotalMinor! > 0)
+            ? DineInTableStatus.preparing
+            : DineInTableStatus.waitingKot,
+    };
+    return DineInTable(
+      label: t.label,
+      status: status,
+      seats: t.seats,
+      guestCount: t.guestCount ?? t.seats,
+      elapsedMinutes: t.elapsedMinutes ?? 0,
+      orderTotalMinor: t.orderTotalMinor ?? 0,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_tablesStream != null) {
+      return StreamBuilder<List<RestaurantTable>>(
+        stream: _tablesStream,
+        builder: (context, snapshot) {
+          final tables = (snapshot.data ?? const <RestaurantTable>[])
+              .map(_toDineInTable)
+              .toList();
+          return _buildContent(context, tables);
+        },
+      );
+    }
+    return _buildContent(context, const []);
+  }
+
+  Widget _buildContent(BuildContext context, List<DineInTable> tables) {
+    final active =
+        tables.where((t) => t.status != DineInTableStatus.available).length;
+    final waitingKot =
+        tables.where((t) => t.status == DineInTableStatus.waitingKot).length;
+    final preparing =
+        tables.where((t) => t.status == DineInTableStatus.preparing).length;
+    final ready =
+        tables.where((t) => t.status == DineInTableStatus.ready).length;
+    final paymentPending = tables
+        .where((t) => t.status == DineInTableStatus.paymentPending)
+        .length;
+
+    return Container(
+        color: ViniiColors.lightPageBg,
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Expanded(
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Dine In Orders',
+                          style: TextStyle(
+                              fontSize: 22, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 10),
+                      Wrap(spacing: 10, runSpacing: 8, children: [
+                        _SummaryChip(
+                            label: 'Active $active',
+                            color: ViniiColors.graySolid),
+                        _SummaryChip(
+                            label: 'Waiting KOT $waitingKot',
+                            color: ViniiColors.amberSolid),
+                        _SummaryChip(
+                            label: 'Preparing $preparing',
+                            color: ViniiColors.amberSolid),
+                        _SummaryChip(
+                            label: 'Ready $ready',
+                            color: ViniiColors.greenSolid),
+                        _SummaryChip(
+                            label: 'Payment Pending $paymentPending',
+                            color: ViniiColors.purpleSolid),
+                      ]),
                     ]),
-                  ]),
+              ),
+              _ViewToggle(
+                  value: _view, onChanged: (v) => setState(() => _view = v)),
+            ]),
+            const SizedBox(height: 24),
+            Expanded(
+              child: _view == _BoardView.tableView
+                  ? (tables.isEmpty
+                      ? const Center(
+                          child: Text(
+                              'No tables found. Add tables in the Tables module.',
+                              style:
+                                  TextStyle(color: ViniiColors.textMutedLight)))
+                      : LayoutBuilder(
+                          builder: (context, gridConstraints) {
+                            if (gridConstraints.maxWidth <= 0 ||
+                                gridConstraints.maxHeight <= 0) {
+                              return const SizedBox.shrink();
+                            }
+                            return GridView.builder(
+                              gridDelegate:
+                                  const SliverGridDelegateWithMaxCrossAxisExtent(
+                                      maxCrossAxisExtent: 320,
+                                      mainAxisExtent: 190,
+                                      crossAxisSpacing: 20,
+                                      mainAxisSpacing: 24),
+                              itemCount: tables.length,
+                              itemBuilder: (context, i) => TableOrderCard(
+                                  table: tables[i],
+                                  onOpen: widget.onOpenOrder,
+                                  onStart: widget.onStartOrder),
+                            );
+                          },
+                        ))
+                  : const Center(
+                      child: Text(
+                          'Order List view is not part of the approved reference yet.',
+                          style: TextStyle(color: ViniiColors.textMutedLight))),
             ),
-            _ViewToggle(
-                value: _view, onChanged: (v) => setState(() => _view = v)),
           ]),
-          const SizedBox(height: 24),
-          Expanded(
-            child: _view == _BoardView.tableView
-                ? GridView.builder(
-                    gridDelegate:
-                        const SliverGridDelegateWithMaxCrossAxisExtent(
-                            maxCrossAxisExtent: 320,
-                            mainAxisExtent: 190,
-                            crossAxisSpacing: 20,
-                            mainAxisSpacing: 24),
-                    itemCount: LocalDineInCatalog.tables.length,
-                    itemBuilder: (context, i) => TableOrderCard(
-                        table: LocalDineInCatalog.tables[i],
-                        onOpen: widget.onOpenOrder,
-                        onStart: widget.onStartOrder))
-                : const Center(
-                    child: Text(
-                        'Order List view is not part of the approved reference yet.',
-                        style: TextStyle(color: ViniiColors.textMutedLight))),
-          ),
-        ]),
-      ));
+        ));
+  }
 }
 
 class _SummaryChip extends StatelessWidget {
@@ -221,10 +314,14 @@ class TableOrderCard extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-          Text(table.label,
-              style:
-                  const TextStyle(fontSize: 19, fontWeight: FontWeight.bold)),
-          Row(children: [
+          Expanded(
+            child: Text(table.label,
+                overflow: TextOverflow.ellipsis,
+                style:
+                    const TextStyle(fontSize: 19, fontWeight: FontWeight.bold)),
+          ),
+          const SizedBox(width: 8),
+          Row(mainAxisSize: MainAxisSize.min, children: [
             const Icon(Icons.person_outline,
                 size: 14, color: ViniiColors.textMutedLight),
             Text(

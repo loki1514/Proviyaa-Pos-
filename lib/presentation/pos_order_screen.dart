@@ -619,17 +619,25 @@ class _ItemGrid extends StatelessWidget {
                       ],
                     ),
                   )
-                : GridView.builder(
-                    gridDelegate:
-                        const SliverGridDelegateWithMaxCrossAxisExtent(
-                      maxCrossAxisExtent: 220,
-                      mainAxisExtent: 130,
-                      crossAxisSpacing: 12,
-                      mainAxisSpacing: 12,
-                    ),
-                    itemCount: items.length,
-                    itemBuilder: (context, i) =>
-                        _ItemCard(item: items[i], onTap: onTap),
+                : LayoutBuilder(
+                    builder: (context, gridConstraints) {
+                      if (gridConstraints.maxWidth <= 0 ||
+                          gridConstraints.maxHeight <= 0) {
+                        return const SizedBox.shrink();
+                      }
+                      return GridView.builder(
+                        gridDelegate:
+                            const SliverGridDelegateWithMaxCrossAxisExtent(
+                          maxCrossAxisExtent: 220,
+                          mainAxisExtent: 130,
+                          crossAxisSpacing: 12,
+                          mainAxisSpacing: 12,
+                        ),
+                        itemCount: items.length,
+                        itemBuilder: (context, i) =>
+                            _ItemCard(item: items[i], onTap: onTap),
+                      );
+                    },
                   ),
           ),
         ],

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'application/kitchen_service.dart';
 import 'application/order_service.dart';
@@ -12,6 +13,9 @@ import 'data/drift_menu_store.dart';
 import 'data/drift_payment_store.dart';
 import 'data/drift_table_store.dart';
 import 'data/local_dine_in_catalog.dart';
+import 'data/online_orders_store.dart';
+import 'data/supabase_online_orders_store.dart';
+import 'data/tab_storage.dart';
 import 'domain/restaurant_table.dart';
 import 'presentation/all_orders_screen.dart';
 import 'presentation/delivery_screen.dart';
@@ -26,9 +30,21 @@ import 'presentation/tables_screen.dart';
 import 'presentation/takeaway_screen.dart';
 import 'presentation/vinii_theme.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(ProviyaaPosApp(config: AppConfig.fromDartDefines()));
+  final config = AppConfig.fromDartDefines();
+  if (config.supabaseUrl.isNotEmpty &&
+      config.supabasePublishableKey.isNotEmpty) {
+    try {
+      await Supabase.initialize(
+        url: config.supabaseUrl,
+        publishableKey: config.supabasePublishableKey,
+      );
+    } catch (e) {
+      debugPrint('Supabase initialization error: $e');
+    }
+  }
+  runApp(ProviyaaPosApp(config: config));
 }
 
 /// One enrolled device serves one location for V1 (D02: one primary POS
@@ -46,7 +62,12 @@ const _demoStaffName = 'Rahul Sharma';
 const _demoBranchName = 'Latur Main Branch';
 
 class ProviyaaPosApp extends StatefulWidget {
-  const ProviyaaPosApp({super.key, required this.config, this.database});
+  const ProviyaaPosApp({
+    super.key,
+    required this.config,
+    this.database,
+    this.onlineOrdersStore,
+  });
   final AppConfig config;
 
   /// Overrides the real on-device database — for tests only. Constructing
@@ -55,6 +76,7 @@ class ProviyaaPosApp extends StatefulWidget {
   /// background timer pending past the pumped frame, which the test
   /// binding treats as a leak. Pass an in-memory `AppDatabase` instead.
   final AppDatabase? database;
+  final OnlineOrdersStore? onlineOrdersStore;
 
   @override
   State<ProviyaaPosApp> createState() => _ProviyaaPosAppState();
@@ -73,12 +95,33 @@ class _ProviyaaPosAppState extends State<ProviyaaPosApp> {
   late final _tableStore = DriftTableStore(_db);
   late final _allOrdersStore = DriftAllOrdersStore(_db);
   late final _menuStore = DriftMenuStore(_db);
+  late final OnlineOrdersStore _onlineOrdersStore =
+      widget.onlineOrdersStore ?? SupabaseOnlineOrdersStore();
 
   PosModule _selected = PosModule.dineIn;
 
   @override
+  void initState() {
+    super.initState();
+    final savedTab = getPersistedTab();
+    if (savedTab != null) {
+      final match =
+          PosModule.values.where((m) => m.name == savedTab).firstOrNull;
+      if (match != null && match != PosModule.pos) {
+        _selected = match;
+      }
+    }
+  }
+
+  @override
   void dispose() {
-    _db.close();
+    if (widget.onlineOrdersStore == null &&
+        _onlineOrdersStore is SupabaseOnlineOrdersStore) {
+      (_onlineOrdersStore as SupabaseOnlineOrdersStore).dispose();
+    }
+    if (widget.database == null) {
+      _db.close();
+    }
     super.dispose();
   }
 
@@ -117,6 +160,7 @@ class _ProviyaaPosAppState extends State<ProviyaaPosApp> {
     if (module == PosModule.pos) {
       _openOrder(context, null);
     } else {
+      persistTab(module.name);
       setState(() => _selected = module);
     }
   }
@@ -127,12 +171,14 @@ class _ProviyaaPosAppState extends State<ProviyaaPosApp> {
             onOpenTable: (t) => _openOrder(context, t),
             onStartOrder: (t) => _openOrder(context, t)),
         PosModule.dineIn => DineInScreen(
+            tableStore: _tableStore,
             onOpenOrder: (t) => _openOrder(context, _asRestaurantTable(t)),
             onStartOrder: (t) => _openOrder(context, _asRestaurantTable(t))),
         PosModule.allOrders => AllOrdersScreen(ordersStore: _allOrdersStore),
         PosModule.takeaway => const TakeawayScreen(),
         PosModule.delivery => const DeliveryScreen(),
-        PosModule.online => const OnlineOrdersScreen(),
+        PosModule.online => OnlineOrdersScreen(
+            ordersStore: _onlineOrdersStore, menuStore: _menuStore),
         PosModule.menu => MenuManagementScreen(menuStore: _menuStore),
         // Selecting POS immediately pushes a route (see _onSelect) and
         // never actually renders this; kept only so the switch is

@@ -255,193 +255,308 @@ class _MenuManagementScreenState extends State<MenuManagementScreen> {
     final headerTitle = selectedCategory?.name ?? 'All Items';
     final headerCount = visibleItems.length;
 
-    return Container(
-      color: ViniiColors.lightPageBg,
-      child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        // Left Rail Categories Sidebar
-        Container(
-          width: 230,
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          decoration: const BoxDecoration(
-              color: ViniiColors.lightBg,
-              border:
-                  Border(right: BorderSide(color: ViniiColors.lightBorder))),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isNarrow = constraints.maxWidth < 720;
+        final sidebarWidth = constraints.maxWidth < 600 ? 190.0 : 230.0;
+        final contentPadding = constraints.maxWidth < 600 ? 16.0 : 24.0;
+
+        return Container(
+          color: ViniiColors.lightPageBg,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                child: Text('CATEGORIES',
-                    style: TextStyle(
-                        fontSize: 11,
-                        color: Colors.grey,
-                        letterSpacing: 1,
-                        fontWeight: FontWeight.bold)),
-              ),
-              Expanded(
-                child: ListView(
+              // Left Rail Categories Sidebar
+              Container(
+                width: sidebarWidth,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                decoration: const BoxDecoration(
+                  color: ViniiColors.lightBg,
+                  border: Border(
+                    right: BorderSide(color: ViniiColors.lightBorder),
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _CategoryTile(
-                      label: 'All Items',
-                      count: totalCount,
-                      selected: _selectedCategoryId == 'all',
-                      onTap: () => setState(() => _selectedCategoryId = 'all'),
-                    ),
-                    for (final c in categories)
-                      _CategoryTile(
-                        label: c.name,
-                        count: c.itemCount,
-                        selected: c.id == _selectedCategoryId,
-                        onTap: () => setState(() => _selectedCategoryId = c.id),
-                        onEdit: () =>
-                            _openAddEditCategoryDialog(context, c, categories),
-                        onDelete: () => _confirmDeleteCategory(context, c),
+                    const Padding(
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                      child: Text(
+                        'CATEGORIES',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.grey,
+                          letterSpacing: 1,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
+                    ),
+                    Expanded(
+                      child: ListView(
+                        children: [
+                          _CategoryTile(
+                            label: 'All Items',
+                            count: totalCount,
+                            selected: _selectedCategoryId == 'all',
+                            onTap: () =>
+                                setState(() => _selectedCategoryId = 'all'),
+                          ),
+                          for (final c in categories)
+                            _CategoryTile(
+                              label: c.name,
+                              count: c.itemCount,
+                              selected: c.id == _selectedCategoryId,
+                              onTap: () =>
+                                  setState(() => _selectedCategoryId = c.id),
+                              onEdit: () => _openAddEditCategoryDialog(
+                                  context, c, categories),
+                              onDelete: () =>
+                                  _confirmDeleteCategory(context, c),
+                            ),
+                        ],
+                      ),
+                    ),
                   ],
+                ),
+              ),
+
+              // Main Content Area
+              Expanded(
+                child: Padding(
+                  padding: EdgeInsets.all(contentPadding),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Top Action Bar
+                      if (isNarrow) ...[
+                        const Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Menu Management',
+                              style: TextStyle(
+                                  fontSize: 22, fontWeight: FontWeight.bold),
+                            ),
+                            SizedBox(height: 4),
+                            Text(
+                              'Organize categories, items, and pricing',
+                              style: TextStyle(
+                                  color: ViniiColors.textMutedLight,
+                                  fontSize: 13),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: [
+                            OutlinedButton.icon(
+                              onPressed: () => _openAddEditCategoryDialog(
+                                  context, null, categories),
+                              icon: const Icon(Icons.add, size: 16),
+                              label: const Text('Add Category'),
+                            ),
+                            FilledButton.icon(
+                              onPressed: () => _openAddEditItemDialog(
+                                  context, null, categories),
+                              style: FilledButton.styleFrom(
+                                  backgroundColor: ViniiColors.brandGreen,
+                                  foregroundColor: Colors.black),
+                              icon: const Icon(Icons.add, size: 16),
+                              label: const Text('Add Item',
+                                  style:
+                                      TextStyle(fontWeight: FontWeight.w700)),
+                            ),
+                            OutlinedButton(
+                              onPressed: () =>
+                                  _showOffItemsDialog(context, allItems),
+                              child: Text('View Off Items  $offCount'),
+                            ),
+                          ],
+                        ),
+                      ] else ...[
+                        Row(
+                          children: [
+                            const Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Menu Management',
+                                    style: TextStyle(
+                                        fontSize: 22,
+                                        fontWeight: FontWeight.bold),
+                                  ),
+                                  SizedBox(height: 4),
+                                  Text(
+                                    'Organize categories, items, and pricing',
+                                    style: TextStyle(
+                                        color: ViniiColors.textMutedLight,
+                                        fontSize: 13),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              alignment: WrapAlignment.end,
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              children: [
+                                OutlinedButton.icon(
+                                  onPressed: () => _openAddEditCategoryDialog(
+                                      context, null, categories),
+                                  icon: const Icon(Icons.add, size: 16),
+                                  label: const Text('Add Category'),
+                                ),
+                                FilledButton.icon(
+                                  onPressed: () => _openAddEditItemDialog(
+                                      context, null, categories),
+                                  style: FilledButton.styleFrom(
+                                      backgroundColor: ViniiColors.brandGreen,
+                                      foregroundColor: Colors.black),
+                                  icon: const Icon(Icons.add, size: 16),
+                                  label: const Text('Add Item',
+                                      style: TextStyle(
+                                          fontWeight: FontWeight.w700)),
+                                ),
+                                OutlinedButton(
+                                  onPressed: () =>
+                                      _showOffItemsDialog(context, allItems),
+                                  child: Text('View Off Items  $offCount'),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ],
+                      const SizedBox(height: 20),
+
+                      // Category Title Header
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              headerTitle,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                  fontSize: 17, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            '$headerCount items',
+                            style: const TextStyle(
+                                color: ViniiColors.textMutedLight,
+                                fontSize: 13),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Items Grid or Honest Empty State
+                      Expanded(
+                        child: categories.isEmpty
+                            ? const Center(
+                                child: SingleChildScrollView(
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.category_outlined,
+                                          size: 56, color: Colors.grey),
+                                      SizedBox(height: 12),
+                                      Text('No categories in menu yet',
+                                          style: TextStyle(
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.w600)),
+                                      SizedBox(height: 6),
+                                      Text(
+                                          'Click "+ Add Category" above to create your first menu category.',
+                                          style: TextStyle(
+                                              color: Colors.grey,
+                                              fontSize: 13)),
+                                    ],
+                                  ),
+                                ),
+                              )
+                            : visibleItems.isEmpty
+                                ? Center(
+                                    child: SingleChildScrollView(
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          const Icon(
+                                              Icons.lunch_dining_outlined,
+                                              size: 56,
+                                              color: Colors.grey),
+                                          const SizedBox(height: 12),
+                                          Text(
+                                            _selectedCategoryId == 'all'
+                                                ? 'No menu items created yet'
+                                                : 'No items in this category yet',
+                                            style: const TextStyle(
+                                                fontSize: 18,
+                                                fontWeight: FontWeight.w600),
+                                          ),
+                                          const SizedBox(height: 6),
+                                          const Text(
+                                              'Click "+ Add Item" above to add items.',
+                                              style: TextStyle(
+                                                  color: Colors.grey,
+                                                  fontSize: 13)),
+                                        ],
+                                      ),
+                                    ),
+                                  )
+                                : LayoutBuilder(
+                                    builder: (context, gridConstraints) {
+                                      if (gridConstraints.maxWidth <= 0 ||
+                                          gridConstraints.maxHeight <= 0) {
+                                        return const SizedBox.shrink();
+                                      }
+                                      return GridView.builder(
+                                        gridDelegate:
+                                            const SliverGridDelegateWithMaxCrossAxisExtent(
+                                                maxCrossAxisExtent: 300,
+                                                mainAxisExtent: 195,
+                                                crossAxisSpacing: 16,
+                                                mainAxisSpacing: 20),
+                                        itemCount: visibleItems.length,
+                                        itemBuilder: (context, i) {
+                                          final item = visibleItems[i];
+                                          return _MenuItemCard(
+                                            item: item,
+                                            onEdit: () =>
+                                                _openAddEditItemDialog(
+                                                    context, item, categories),
+                                            onDelete: () => _confirmDeleteItem(
+                                                context, item),
+                                            onToggleAvailability: () async {
+                                              if (widget.menuStore != null) {
+                                                await widget.menuStore!
+                                                    .toggleItemAvailability(
+                                                        item.id,
+                                                        !item.available);
+                                              }
+                                            },
+                                          );
+                                        },
+                                      );
+                                    },
+                                  ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],
           ),
-        ),
-
-        // Main Content Area
-        Expanded(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Top Action Bar
-                Row(children: [
-                  const Expanded(
-                    child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Menu Management',
-                              style: TextStyle(
-                                  fontSize: 22, fontWeight: FontWeight.bold)),
-                          SizedBox(height: 4),
-                          Text('Organize categories, items, and pricing',
-                              style: TextStyle(
-                                  color: ViniiColors.textMutedLight,
-                                  fontSize: 13)),
-                        ]),
-                  ),
-                  OutlinedButton.icon(
-                    onPressed: () =>
-                        _openAddEditCategoryDialog(context, null, categories),
-                    icon: const Icon(Icons.add, size: 16),
-                    label: const Text('Add Category'),
-                  ),
-                  const SizedBox(width: 8),
-                  FilledButton.icon(
-                    onPressed: () =>
-                        _openAddEditItemDialog(context, null, categories),
-                    style: FilledButton.styleFrom(
-                        backgroundColor: ViniiColors.brandGreen,
-                        foregroundColor: Colors.black),
-                    icon: const Icon(Icons.add, size: 16),
-                    label: const Text('Add Item',
-                        style: TextStyle(fontWeight: FontWeight.w700)),
-                  ),
-                  const SizedBox(width: 8),
-                  OutlinedButton(
-                    onPressed: () => _showOffItemsDialog(context, allItems),
-                    child: Text('View Off Items  $offCount'),
-                  ),
-                ]),
-                const SizedBox(height: 20),
-
-                // Category Title Header
-                Row(children: [
-                  Text(headerTitle,
-                      style: const TextStyle(
-                          fontSize: 17, fontWeight: FontWeight.bold)),
-                  const SizedBox(width: 8),
-                  Text('$headerCount items',
-                      style: const TextStyle(
-                          color: ViniiColors.textMutedLight, fontSize: 13)),
-                ]),
-                const SizedBox(height: 12),
-
-                // Items Grid or Honest Empty State
-                Expanded(
-                  child: categories.isEmpty
-                      ? const Center(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.category_outlined,
-                                  size: 56, color: Colors.grey),
-                              SizedBox(height: 12),
-                              Text('No categories in menu yet',
-                                  style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w600)),
-                              SizedBox(height: 6),
-                              Text(
-                                  'Click "+ Add Category" above to create your first menu category.',
-                                  style: TextStyle(
-                                      color: Colors.grey, fontSize: 13)),
-                            ],
-                          ),
-                        )
-                      : visibleItems.isEmpty
-                          ? Center(
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(Icons.lunch_dining_outlined,
-                                      size: 56, color: Colors.grey),
-                                  const SizedBox(height: 12),
-                                  Text(
-                                    _selectedCategoryId == 'all'
-                                        ? 'No menu items created yet'
-                                        : 'No items in this category yet',
-                                    style: const TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.w600),
-                                  ),
-                                  const SizedBox(height: 6),
-                                  const Text(
-                                      'Click "+ Add Item" above to add items.',
-                                      style: TextStyle(
-                                          color: Colors.grey, fontSize: 13)),
-                                ],
-                              ),
-                            )
-                          : GridView.builder(
-                              gridDelegate:
-                                  const SliverGridDelegateWithMaxCrossAxisExtent(
-                                      maxCrossAxisExtent: 300,
-                                      mainAxisExtent: 195,
-                                      crossAxisSpacing: 16,
-                                      mainAxisSpacing: 20),
-                              itemCount: visibleItems.length,
-                              itemBuilder: (context, i) {
-                                final item = visibleItems[i];
-                                return _MenuItemCard(
-                                  item: item,
-                                  onEdit: () => _openAddEditItemDialog(
-                                      context, item, categories),
-                                  onDelete: () =>
-                                      _confirmDeleteItem(context, item),
-                                  onToggleAvailability: () async {
-                                    if (widget.menuStore != null) {
-                                      await widget.menuStore!
-                                          .toggleItemAvailability(
-                                              item.id, !item.available);
-                                    }
-                                  },
-                                );
-                              },
-                            ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ]),
+        );
+      },
     );
   }
 }
@@ -668,40 +783,43 @@ class _MenuItemCard extends StatelessWidget {
               style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
             ),
             const SizedBox(height: 6),
-            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-              Row(children: [
-                Container(
-                  width: 7,
-                  height: 7,
-                  decoration: BoxDecoration(
-                    color: item.isVeg
-                        ? ViniiColors.greenSolid
-                        : ViniiColors.redSolid,
-                    shape: BoxShape.circle,
-                  ),
+            Row(children: [
+              Container(
+                width: 7,
+                height: 7,
+                decoration: BoxDecoration(
+                  color: item.isVeg
+                      ? ViniiColors.greenSolid
+                      : ViniiColors.redSolid,
+                  shape: BoxShape.circle,
                 ),
-                const SizedBox(width: 4),
-                Text(
-                  item.isVeg ? 'Veg' : 'Non-Veg',
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: item.isVeg
-                        ? ViniiColors.greenSolid
-                        : ViniiColors.redSolid,
-                  ),
-                ),
-              ]),
+              ),
+              const SizedBox(width: 4),
               Text(
-                item.available
-                    ? 'Available'
-                    : (item.unavailableReason ?? 'Unavailable'),
+                item.isVeg ? 'Veg' : 'Non-Veg',
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
-                  color: item.available
+                  color: item.isVeg
                       ? ViniiColors.greenSolid
                       : ViniiColors.redSolid,
+                ),
+              ),
+              const Spacer(),
+              Flexible(
+                child: Text(
+                  item.available
+                      ? 'Available'
+                      : (item.unavailableReason ?? 'Unavailable'),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: item.available
+                        ? ViniiColors.greenSolid
+                        : ViniiColors.redSolid,
+                  ),
                 ),
               ),
             ]),

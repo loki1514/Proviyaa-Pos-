@@ -119,113 +119,184 @@ class _TablesScreenState extends State<TablesScreen> {
     final cleaning =
         tables.where((t) => t.status == TableStatus.cleaning).length;
 
-    return Padding(
-      padding: const EdgeInsets.all(24),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
-          Expanded(
-            child:
-                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('Tables',
-                  style: Theme.of(context)
-                      .textTheme
-                      .headlineSmall
-                      ?.copyWith(fontWeight: FontWeight.bold)),
-              const SizedBox(height: 4),
-              Wrap(children: [
-                Text('${tables.length} Total  •  '),
-                Text('$occupied Occupied  •  ',
-                    style: const TextStyle(
-                        color: ViniiColors.blueSolid,
-                        fontWeight: FontWeight.w600)),
-                Text('$available Available  •  ',
-                    style: const TextStyle(
-                        color: ViniiColors.greenSolid,
-                        fontWeight: FontWeight.w600)),
-                Text('$reserved Reserved  •  ',
-                    style: const TextStyle(
-                        color: ViniiColors.amberSolid,
-                        fontWeight: FontWeight.w600)),
-                Text('$cleaning Cleaning'),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isNarrow = constraints.maxWidth < 700;
+        final contentPadding = constraints.maxWidth < 600 ? 16.0 : 24.0;
+
+        return Padding(
+          padding: EdgeInsets.all(contentPadding),
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            if (isNarrow) ...[
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text('Tables',
+                    style: Theme.of(context)
+                        .textTheme
+                        .headlineSmall
+                        ?.copyWith(fontWeight: FontWeight.bold)),
+                const SizedBox(height: 4),
+                Wrap(children: [
+                  Text('${tables.length} Total  •  '),
+                  Text('$occupied Occupied  •  ',
+                      style: const TextStyle(
+                          color: ViniiColors.blueSolid,
+                          fontWeight: FontWeight.w600)),
+                  Text('$available Available  •  ',
+                      style: const TextStyle(
+                          color: ViniiColors.greenSolid,
+                          fontWeight: FontWeight.w600)),
+                  Text('$reserved Reserved  •  ',
+                      style: const TextStyle(
+                          color: ViniiColors.amberSolid,
+                          fontWeight: FontWeight.w600)),
+                  Text('$cleaning Cleaning'),
+                ]),
               ]),
-            ]),
-          ),
-          _ZoneFilterBar(
-              value: _filter, onChanged: (v) => setState(() => _filter = v)),
-          const SizedBox(width: 12),
-          FilledButton.icon(
-            icon: const Icon(Icons.add, size: 18),
-            label: const Text('Add Table'),
-            style: FilledButton.styleFrom(
-              backgroundColor: ViniiColors.brandGreen,
-              foregroundColor: Colors.black,
-            ),
-            onPressed: () => _openAddEditDialog(context, null),
-          ),
-        ]),
-        const SizedBox(height: 20),
-        Expanded(
-          child: tables.isEmpty
-              ? const Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.table_restaurant_outlined,
-                          size: 56, color: Colors.grey),
-                      SizedBox(height: 12),
-                      Text('No tables in database yet',
-                          style: TextStyle(
-                              fontSize: 18, fontWeight: FontWeight.w600)),
-                      SizedBox(height: 6),
-                      Text(
-                          'Click "+ Add Table" above to add your first restaurant table.',
-                          style: TextStyle(color: Colors.grey, fontSize: 13)),
-                    ],
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  _ZoneFilterBar(
+                      value: _filter,
+                      onChanged: (v) => setState(() => _filter = v)),
+                  FilledButton.icon(
+                    icon: const Icon(Icons.add, size: 18),
+                    label: const Text('Add Table'),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: ViniiColors.brandGreen,
+                      foregroundColor: Colors.black,
+                    ),
+                    onPressed: () => _openAddEditDialog(context, null),
                   ),
-                )
-              : visible.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.table_restaurant_outlined,
-                              size: 48, color: Colors.grey),
-                          const SizedBox(height: 12),
-                          const Text('No tables found in this zone',
-                              style:
-                                  TextStyle(color: Colors.grey, fontSize: 16)),
-                          const SizedBox(height: 12),
-                          FilledButton.icon(
-                            icon: const Icon(Icons.add, size: 18),
-                            label: const Text('Create a Table'),
-                            style: FilledButton.styleFrom(
-                              backgroundColor: ViniiColors.brandGreen,
-                              foregroundColor: Colors.black,
-                            ),
-                            onPressed: () => _openAddEditDialog(context, null),
-                          ),
-                        ],
+                ],
+              ),
+            ] else ...[
+              Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
+                Expanded(
+                  child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Tables',
+                            style: Theme.of(context)
+                                .textTheme
+                                .headlineSmall
+                                ?.copyWith(fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 4),
+                        Wrap(children: [
+                          Text('${tables.length} Total  •  '),
+                          Text('$occupied Occupied  •  ',
+                              style: const TextStyle(
+                                  color: ViniiColors.blueSolid,
+                                  fontWeight: FontWeight.w600)),
+                          Text('$available Available  •  ',
+                              style: const TextStyle(
+                                  color: ViniiColors.greenSolid,
+                                  fontWeight: FontWeight.w600)),
+                          Text('$reserved Reserved  •  ',
+                              style: const TextStyle(
+                                  color: ViniiColors.amberSolid,
+                                  fontWeight: FontWeight.w600)),
+                          Text('$cleaning Cleaning'),
+                        ]),
+                      ]),
+                ),
+                _ZoneFilterBar(
+                    value: _filter,
+                    onChanged: (v) => setState(() => _filter = v)),
+                const SizedBox(width: 12),
+                FilledButton.icon(
+                  icon: const Icon(Icons.add, size: 18),
+                  label: const Text('Add Table'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: ViniiColors.brandGreen,
+                    foregroundColor: Colors.black,
+                  ),
+                  onPressed: () => _openAddEditDialog(context, null),
+                ),
+              ]),
+            ],
+            const SizedBox(height: 20),
+            Expanded(
+              child: tables.isEmpty
+                  ? const Center(
+                      child: SingleChildScrollView(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.table_restaurant_outlined,
+                                size: 56, color: Colors.grey),
+                            SizedBox(height: 12),
+                            Text('No tables in database yet',
+                                style: TextStyle(
+                                    fontSize: 18, fontWeight: FontWeight.w600)),
+                            SizedBox(height: 6),
+                            Text(
+                                'Click "+ Add Table" above to add your first restaurant table.',
+                                style: TextStyle(
+                                    color: Colors.grey, fontSize: 13)),
+                          ],
+                        ),
                       ),
                     )
-                  : GridView.builder(
-                      gridDelegate:
-                          const SliverGridDelegateWithMaxCrossAxisExtent(
-                              maxCrossAxisExtent: 235,
-                              mainAxisExtent: 182,
-                              crossAxisSpacing: 16,
-                              mainAxisSpacing: 16),
-                      itemCount: visible.length,
-                      itemBuilder: (context, i) => _TableCard(
-                        table: visible[i],
-                        onOpen: widget.onOpenTable,
-                        onStart: widget.onStartOrder,
-                        onEdit: (t) => _openAddEditDialog(context, t),
-                        onDelete: (t) => _confirmDelete(context, t),
-                        onUpdateStatus: _changeStatus,
-                      ),
-                    ),
-        ),
-      ]),
+                  : visible.isEmpty
+                      ? Center(
+                          child: SingleChildScrollView(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.table_restaurant_outlined,
+                                    size: 48, color: Colors.grey),
+                                const SizedBox(height: 12),
+                                const Text('No tables found in this zone',
+                                    style: TextStyle(
+                                        color: Colors.grey, fontSize: 16)),
+                                const SizedBox(height: 12),
+                                FilledButton.icon(
+                                  icon: const Icon(Icons.add, size: 18),
+                                  label: const Text('Create a Table'),
+                                  style: FilledButton.styleFrom(
+                                    backgroundColor: ViniiColors.brandGreen,
+                                    foregroundColor: Colors.black,
+                                  ),
+                                  onPressed: () =>
+                                      _openAddEditDialog(context, null),
+                                ),
+                              ],
+                            ),
+                          ),
+                        )
+                      : LayoutBuilder(
+                          builder: (context, gridConstraints) {
+                            if (gridConstraints.maxWidth <= 0 ||
+                                gridConstraints.maxHeight <= 0) {
+                              return const SizedBox.shrink();
+                            }
+                            return GridView.builder(
+                              gridDelegate:
+                                  const SliverGridDelegateWithMaxCrossAxisExtent(
+                                      maxCrossAxisExtent: 235,
+                                      mainAxisExtent: 182,
+                                      crossAxisSpacing: 16,
+                                      mainAxisSpacing: 16),
+                              itemCount: visible.length,
+                              itemBuilder: (context, i) => _TableCard(
+                                table: visible[i],
+                                onOpen: widget.onOpenTable,
+                                onStart: widget.onStartOrder,
+                                onEdit: (t) => _openAddEditDialog(context, t),
+                                onDelete: (t) => _confirmDelete(context, t),
+                                onUpdateStatus: _changeStatus,
+                              ),
+                            );
+                          },
+                        ),
+            ),
+          ]),
+        );
+      },
     );
   }
 }

@@ -21,3 +21,4 @@ coverage/
 *.pem
 *.key
 service-account*.json
+.chrome_dev_data/
