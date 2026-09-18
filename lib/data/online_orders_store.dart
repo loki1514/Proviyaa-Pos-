@@ -73,14 +73,13 @@ class InMemoryOnlineOrdersStore implements OnlineOrdersStore {
 
   void _emit() {
     if (!_stateController.isClosed) {
-      _stateController
-          .add(state);
+      _stateController.add(state);
     }
   }
 
   @override
   Stream<OnlineOrdersState> watchState() async* {
-    yield OnlineOrdersState.success(_ordersById.values.toList());
+    yield state;
     yield* _stateController.stream;
   }
 

@@ -95,8 +95,10 @@ class _ProviyaaPosAppState extends State<ProviyaaPosApp> {
   late final _tableStore = DriftTableStore(_db);
   late final _allOrdersStore = DriftAllOrdersStore(_db);
   late final _menuStore = DriftMenuStore(_db);
-  late final OnlineOrdersStore _onlineOrdersStore =
-      widget.onlineOrdersStore ?? SupabaseOnlineOrdersStore();
+  late final OnlineOrdersStore _onlineOrdersStore = widget.onlineOrdersStore ??
+      (widget.database != null
+          ? InMemoryOnlineOrdersStore()
+          : SupabaseOnlineOrdersStore());
 
   PosModule _selected = PosModule.dineIn;
 

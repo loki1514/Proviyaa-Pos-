@@ -28,17 +28,18 @@ class OnlineOrderRow {
     String? status,
     String? time,
     String? actionLabel,
-  }) =>
-      OnlineOrderRow(
-        orderId: orderId ?? this.orderId,
-        platform: platform ?? this.platform,
-        customer: customer ?? this.customer,
-        itemsLabel: itemsLabel ?? this.itemsLabel,
-        amountMinor: amountMinor ?? this.amountMinor,
-        status: status ?? this.status,
-        time: time ?? this.time,
-        actionLabel: actionLabel ?? this.actionLabel,
-      );
+  }) {
+    return OnlineOrderRow(
+      orderId: orderId ?? this.orderId,
+      platform: platform ?? this.platform,
+      customer: customer ?? this.customer,
+      itemsLabel: itemsLabel ?? this.itemsLabel,
+      amountMinor: amountMinor ?? this.amountMinor,
+      status: status ?? this.status,
+      time: time ?? this.time,
+      actionLabel: actionLabel ?? this.actionLabel,
+    );
+  }
 
   factory OnlineOrderRow.fromJson(Map<String, dynamic> json) {
     final rawAmount = json['amount_minor'] ?? json['amountMinor'] ?? 0;
@@ -58,16 +59,18 @@ class OnlineOrderRow {
     );
   }
 
-  Map<String, dynamic> toJson() => {
-        'order_id': orderId,
-        'platform': platform,
-        'customer': customer,
-        'items_label': itemsLabel,
-        'amount_minor': amountMinor,
-        'status': status,
-        'time': time,
-        'action_label': actionLabel,
-      };
+  Map<String, dynamic> toJson() {
+    return {
+      'order_id': orderId,
+      'platform': platform,
+      'customer': customer,
+      'items_label': itemsLabel,
+      'amount_minor': amountMinor,
+      'status': status,
+      'time': time,
+      'action_label': actionLabel,
+    };
+  }
 }
 
 class LocalOnlineOrdersCatalog {

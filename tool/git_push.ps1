@@ -11,7 +11,7 @@ try {
     Write-Host "Staging all changes..." -ForegroundColor Cyan
     & git add .
 
-    $commitMsg = if ($args.Length -gt 0) { $args -join ' ' } else { "Fix widget tests and StreamBuilder initialData in OnlineOrdersScreen" }
+    $commitMsg = if ($args.Length -gt 0) { $args -join ' ' } else { "Fix all CI gates: dart format, flutter analyze, and flutter test" }
     Write-Host "Committing: '$commitMsg'..." -ForegroundColor Cyan
     & git commit -m "$commitMsg"
 
