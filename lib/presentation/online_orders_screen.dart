@@ -88,24 +88,35 @@ class _OnlineOrdersScreenState extends State<OnlineOrdersScreen> {
   ];
 
   bool _matchesPlatform(OnlineOrderRow order) {
-    if (_platform == 'All Platforms') return true;
+    if (_platform == 'All Platforms') {
+      return true;
+    }
     final platLower = order.platform.toLowerCase();
-    if (_platform == 'Zomato') return platLower == 'z' || platLower == 'zomato';
-    if (_platform == 'Swiggy') return platLower == 's' || platLower == 'swiggy';
-    if (_platform == 'Website')
+    if (_platform == 'Zomato') {
+      return platLower == 'z' || platLower == 'zomato';
+    }
+    if (_platform == 'Swiggy') {
+      return platLower == 's' || platLower == 'swiggy';
+    }
+    if (_platform == 'Website') {
       return platLower == 'w' || platLower == 'website';
+    }
     return true;
   }
 
   bool _matchesStatus(OnlineOrderRow order) {
-    if (_statusTab == 'All') return true;
+    if (_statusTab == 'All') {
+      return true;
+    }
     return order.status.toLowerCase() == _statusTab.toLowerCase();
   }
 
   Future<void> _acceptOrder(OnlineOrderRow row) async {
     try {
       await _store.updateStatus(row.orderId, 'Accepted', 'Prepare');
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Order ${row.orderId} Accepted'),
@@ -114,7 +125,9 @@ class _OnlineOrdersScreenState extends State<OnlineOrdersScreen> {
         ),
       );
     } catch (e) {
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Failed to accept order: $e'),
@@ -150,7 +163,9 @@ class _OnlineOrdersScreenState extends State<OnlineOrdersScreen> {
     if (confirmed == true) {
       try {
         await _store.deleteOrder(row.orderId);
-        if (!mounted) return;
+        if (!mounted) {
+          return;
+        }
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Order ${row.orderId} Rejected & Deleted'),
@@ -159,7 +174,9 @@ class _OnlineOrdersScreenState extends State<OnlineOrdersScreen> {
           ),
         );
       } catch (e) {
-        if (!mounted) return;
+        if (!mounted) {
+          return;
+        }
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to delete order: $e'),
@@ -209,7 +226,9 @@ class _OnlineOrdersScreenState extends State<OnlineOrdersScreen> {
 
     try {
       await _store.updateStatus(row.orderId, nextStatus, nextAction);
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Order ${row.orderId} moved to $nextStatus'),
@@ -217,7 +236,9 @@ class _OnlineOrdersScreenState extends State<OnlineOrdersScreen> {
         ),
       );
     } catch (e) {
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Failed to update order: $e'),
@@ -249,7 +270,9 @@ class _OnlineOrdersScreenState extends State<OnlineOrdersScreen> {
     }
     final itemMap = {for (final i in availableItems) i.id: i};
 
-    if (!mounted) return;
+    if (!mounted) {
+      return;
+    }
 
     await showDialog<void>(
       context: context,
@@ -293,7 +316,7 @@ class _OnlineOrdersScreenState extends State<OnlineOrdersScreen> {
                     children: [
                       // Platform Selector
                       DropdownButtonFormField<String>(
-                        value: platform,
+                        initialValue: platform,
                         decoration: const InputDecoration(
                           labelText: 'Platform',
                           isDense: true,
@@ -674,7 +697,9 @@ class _OnlineOrdersScreenState extends State<OnlineOrdersScreen> {
                 onPressed: () async {
                   setDialogState(() => hasAttemptedSubmit = true);
                   if (formKey.currentState?.validate() ?? false) {
-                    if (selectedQuantities.isEmpty) return;
+                    if (selectedQuantities.isEmpty) {
+                      return;
+                    }
                     formKey.currentState?.save();
 
                     final prefix = platform == 'Z'
@@ -708,7 +733,9 @@ class _OnlineOrdersScreenState extends State<OnlineOrdersScreen> {
 
                     try {
                       await _store.insertOrder(newOrder);
-                      if (ctx.mounted) Navigator.of(ctx).pop();
+                      if (ctx.mounted) {
+                        Navigator.of(ctx).pop();
+                      }
                       if (mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(

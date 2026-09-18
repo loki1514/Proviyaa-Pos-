@@ -11,7 +11,7 @@ try {
     Write-Host "Staging all changes..." -ForegroundColor Cyan
     & git add .
 
-    $commitMsg = if ($args.Length -gt 0) { $args -join ' ' } else { "Implement Supabase online orders single source of truth, remove dummy data, and add auto POS GST billing" }
+    $commitMsg = if ($args.Length -gt 0) { $args -join ' ' } else { "Fix analyzer warnings: curly braces in flow control and replace deprecated value with initialValue" }
     Write-Host "Committing: '$commitMsg'..." -ForegroundColor Cyan
     & git commit -m "$commitMsg"
 

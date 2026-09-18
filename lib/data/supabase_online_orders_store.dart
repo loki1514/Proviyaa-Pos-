@@ -27,7 +27,9 @@ class SupabaseOnlineOrdersStore implements OnlineOrdersStore {
   OnlineOrdersState get state => _state;
 
   SupabaseClient? get client {
-    if (_client != null) return _client;
+    if (_client != null) {
+      return _client;
+    }
     try {
       _client = Supabase.instance.client;
     } catch (_) {
