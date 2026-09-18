@@ -24,6 +24,7 @@ class SupabaseOnlineOrdersStore implements OnlineOrdersStore {
   final Map<String, OnlineOrderRow> _ordersById = {};
 
   OnlineOrdersState _state = const OnlineOrdersState.loading();
+  @override
   OnlineOrdersState get state => _state;
 
   SupabaseClient? get client {
