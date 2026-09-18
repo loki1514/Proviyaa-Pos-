@@ -11,7 +11,7 @@ try {
     Write-Host "Staging all changes..." -ForegroundColor Cyan
     & git add .
 
-    $commitMsg = if ($args.Length -gt 0) { $args -join ' ' } else { "Fix analyzer warnings: curly braces in flow control and replace deprecated value with initialValue" }
+    $commitMsg = if ($args.Length -gt 0) { $args -join ' ' } else { "Fix widget tests and StreamBuilder initialData in OnlineOrdersScreen" }
     Write-Host "Committing: '$commitMsg'..." -ForegroundColor Cyan
     & git commit -m "$commitMsg"
 

@@ -131,6 +131,9 @@ void main() {
 
     testWidgets('Empty database shows "No orders found" and zero dummy rows',
         (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(1280, 800));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -148,10 +151,16 @@ void main() {
       // Verify no dummy rows exist
       expect(find.text('#ZOM-4821'), findsNothing);
       expect(find.text('Priya Verma'), findsNothing);
+
+      await tester.pumpWidget(const SizedBox());
+      await tester.pumpAndSettle();
     });
 
     testWidgets('Full CRUD flow: Create -> Accept -> Reject (Delete)',
         (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(1280, 800));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -179,7 +188,11 @@ void main() {
       await tester.pumpAndSettle();
 
       // Tap '+' to make it 2x: Subtotal ₹640, GST ₹32, Total ₹672
-      await tester.tap(find.byIcon(Icons.add));
+      final dialogAddIcon = find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.byIcon(Icons.add),
+      );
+      await tester.tap(dialogAddIcon);
       await tester.pumpAndSettle();
 
       expect(find.text('₹672.00'), findsOneWidget);
@@ -239,6 +252,9 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('No orders found'), findsOneWidget);
+
+      await tester.pumpWidget(const SizedBox());
+      await tester.pumpAndSettle();
     });
   });
 }

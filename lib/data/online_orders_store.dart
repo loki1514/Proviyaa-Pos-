@@ -41,6 +41,7 @@ class OnlineOrdersState {
 }
 
 abstract class OnlineOrdersStore {
+  OnlineOrdersState get state;
   Stream<OnlineOrdersState> watchState();
   Stream<List<OnlineOrderRow>> watchOrders();
   Future<List<OnlineOrderRow>> getOrders();
@@ -66,10 +67,14 @@ class InMemoryOnlineOrdersStore implements OnlineOrdersStore {
   final Map<String, OnlineOrderRow> _ordersById = {};
   final _stateController = StreamController<OnlineOrdersState>.broadcast();
 
+  @override
+  OnlineOrdersState get state =>
+      OnlineOrdersState.success(_ordersById.values.toList());
+
   void _emit() {
     if (!_stateController.isClosed) {
       _stateController
-          .add(OnlineOrdersState.success(_ordersById.values.toList()));
+          .add(state);
     }
   }
 

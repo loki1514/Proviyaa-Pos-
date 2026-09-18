@@ -47,6 +47,7 @@ class OnlineOrdersScreen extends StatefulWidget {
 class _OnlineOrdersScreenState extends State<OnlineOrdersScreen> {
   late final OnlineOrdersStore _store =
       widget.ordersStore ?? SupabaseOnlineOrdersStore();
+  late final Stream<OnlineOrdersState> _stateStream = _store.watchState();
 
   @override
   void dispose() {
@@ -801,9 +802,10 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.online_orders;
 
   @override
   Widget build(BuildContext context) => StreamBuilder<OnlineOrdersState>(
-        stream: _store.watchState(),
+        initialData: _store.state,
+        stream: _stateStream,
         builder: (context, snapshot) {
-          final state = snapshot.data ?? const OnlineOrdersState.loading();
+          final state = snapshot.data ?? _store.state;
 
           // Calculate counts strictly from the actual orders in Supabase
           final allOrders = state.orders;
